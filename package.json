@@ -1,0 +1,26 @@
+{
+  "name": "trading-calc",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "build:dev": "eas build --profile development --platform android",
+    "build:preview": "eas build --profile preview --platform android",
+    "build:apk": "eas build --profile apk --platform android",
+    "build:aab": "eas build --profile production --platform android",
+    "build:ios": "eas build --profile production --platform ios"
+  },
+  "dependencies": {
+    "expo": "~54.0.28",
+    "expo-status-bar": "~3.0.9",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-native": "0.81.5",
+    "react-native-safe-area-context": "~5.6.0",
+    "react-native-web": "^0.21.0"
+  },
+  "private": true
+}
