@@ -33,7 +33,7 @@ export default function CalculatorScreen() {
     const activeTheme = theme === "light" ? lightTheme : darkTheme;
 
     const toNum = (s) => {
-        if (!s) return null;
+        if (s === null || s === undefined || s === "") return null;
         const n = Number(String(s).replace(/,/g, ""));
         return Number.isFinite(n) ? n : null;
     };
@@ -43,9 +43,10 @@ export default function CalculatorScreen() {
         if (rawValue.includes("-")) {
             rawValue = rawValue.replace(/-/g, "");
         }
+
         const numVal = toNum(rawValue);
 
-        // Negative validation (same as Next.js)
+        // Negative validation
         if (
             numVal != null &&
             [
@@ -60,12 +61,8 @@ export default function CalculatorScreen() {
             ].includes(field) &&
             numVal < 0
         ) {
-            if (rawValue === "-") {
-                setErrors((p) => ({ ...p, [field]: "Value cannot be negative" }));
-            } else {
-                setVals((p) => ({ ...p, [field]: "" }));
-                setErrors((p) => ({ ...p, [field]: null }));
-            }
+            setVals((p) => ({ ...p, [field]: "" }));
+            setErrors((p) => ({ ...p, [field]: null }));
             return;
         }
 
@@ -82,25 +79,31 @@ export default function CalculatorScreen() {
 
         setErrors((p) => ({ ...p, [field]: null }));
 
-        const numericVals = { ...vals, [field]: toNum(rawValue) };
-        for (const k in numericVals) {
-            if (k !== field) numericVals[k] = toNum(vals[k]);
+        // Build a fully numeric snapshot of current values, then apply the new edit
+        const numericVals = {};
+        for (const k of Object.keys(FIELD_LABELS)) {
+            numericVals[k] = k === field ? numVal : toNum(vals[k]);
         }
 
         const derived = deriveIterative(numericVals, field);
 
+        // Format derived values back to strings
         const formatted = {};
-        Object.keys(derived).forEach((k) => {
+        for (const k of Object.keys(derived)) {
             const v = derived[k];
-            formatted[k] =
-                v == null
-                    ? ""
-                    : Math.abs(v - Math.round(v)) < 1e-6
-                        ? String(Math.round(v))
-                        : String(Number(v.toFixed(6)));
-        });
+            if (v == null) {
+                formatted[k] = "";
+            } else if (Math.abs(v - Math.round(v)) < 1e-6) {
+                formatted[k] = String(Math.round(v));
+            } else {
+                formatted[k] = String(Number(v.toFixed(6)));
+            }
+        }
 
+        // Preserve the raw string the user is currently typing so the cursor
+        // doesn't jump (e.g. "100." mid-entry stays as "100." not "100")
         formatted[field] = rawValue;
+
         setVals(formatted);
     }
 
@@ -112,7 +115,9 @@ export default function CalculatorScreen() {
         while (changed && iter++ < 40) {
             changed = false;
 
-            // SL <-> SL%
+            // ── SL Price ↔ SL % ────────────────────────────────────────────────
+
+            // Derive SL% from SL Price (only when user didn't type SL%)
             if (
                 editedField !== "slPercent" &&
                 v.entryPrice != null &&
@@ -120,26 +125,28 @@ export default function CalculatorScreen() {
                 v.entryPrice > EPS
             ) {
                 const slPercent = ((v.entryPrice - v.slPrice) / v.entryPrice) * 100;
-                if (Math.abs(slPercent - (v.slPercent || 0)) > EPS) {
+                if (Math.abs(slPercent - (v.slPercent ?? 0)) > EPS) {
                     v.slPercent = slPercent;
                     changed = true;
                 }
             }
 
-            if (editedField !== "slPrice" && v.entryPrice != null) {
-                let slPrice = null;
-                if (v.slPercent != null) {
-                    slPrice = v.entryPrice * (1 - v.slPercent / 100);
-                }
-                if (slPrice != null) {
-                    if (Math.abs(slPrice - (v.slPrice || 0)) > EPS) {
-                        v.slPrice = slPrice;
-                        changed = true;
-                    }
+            // Derive SL Price from SL% (only when user didn't type SL Price)
+            if (
+                editedField !== "slPrice" &&
+                v.entryPrice != null &&
+                v.slPercent != null
+            ) {
+                const slPrice = v.entryPrice * (1 - v.slPercent / 100);
+                if (Math.abs(slPrice - (v.slPrice ?? 0)) > EPS) {
+                    v.slPrice = slPrice;
+                    changed = true;
                 }
             }
 
-            // Target <-> %
+            // ── Target Price ↔ Target % ─────────────────────────────────────────
+
+            // Derive Target% from Target Price
             if (
                 editedField !== "targetPercent" &&
                 v.entryPrice != null &&
@@ -148,77 +155,96 @@ export default function CalculatorScreen() {
             ) {
                 const targetPercent =
                     ((v.targetPrice - v.entryPrice) / v.entryPrice) * 100;
-                if (Math.abs(targetPercent - (v.targetPercent || 0)) > EPS) {
+                if (Math.abs(targetPercent - (v.targetPercent ?? 0)) > EPS) {
                     v.targetPercent = targetPercent;
                     changed = true;
                 }
             }
 
+            // Derive Target Price from Target%
             if (
                 editedField !== "targetPrice" &&
                 v.entryPrice != null &&
                 v.targetPercent != null
             ) {
                 const targetPrice = v.entryPrice * (1 + v.targetPercent / 100);
-                if (Math.abs(targetPrice - (v.targetPrice || 0)) > EPS) {
+                if (Math.abs(targetPrice - (v.targetPrice ?? 0)) > EPS) {
                     v.targetPrice = targetPrice;
                     changed = true;
                 }
             }
 
-            // Quantity / Position
-            if (
-                v.positionAmount != null &&
-                v.entryPrice != null &&
-                editedField !== "quantity" &&
-                editedField !== "riskAmount"
-            ) {
-                if (Math.abs(v.entryPrice) > EPS) {
-                    const q = v.positionAmount / v.entryPrice;
-                    if (Math.abs(q - (v.quantity || 0)) > EPS) {
-                        v.quantity = q;
-                        changed = true;
+            // ── Quantity ↔ Position Amount ↔ Risk Amount ────────────────────────
+
+            // FIX: Each derivation path for Quantity must guard the editedField
+            // so we don't circularly overwrite the field the user is typing in.
+
+            if (editedField !== "quantity") {
+                let derivedQty = null;
+
+                if (
+                    editedField === "positionAmount" &&
+                    v.positionAmount != null &&
+                    v.entryPrice != null &&
+                    Math.abs(v.entryPrice) > EPS
+                ) {
+                    // User typed Position Amount → derive Quantity
+                    derivedQty = v.positionAmount / v.entryPrice;
+                } else if (
+                    editedField !== "positionAmount" &&
+                    v.riskAmount != null &&
+                    v.slPrice != null &&
+                    v.entryPrice != null
+                ) {
+                    // User typed Risk Amount (or other) → derive Quantity from Risk
+                    const denom = Math.abs(v.entryPrice - v.slPrice);
+                    if (denom > EPS) {
+                        derivedQty = v.riskAmount / denom;
                     }
+                } else if (
+                    editedField !== "positionAmount" &&
+                    v.positionAmount != null &&
+                    v.entryPrice != null &&
+                    Math.abs(v.entryPrice) > EPS
+                ) {
+                    // Position Amount already known from a prior iteration → keep qty in sync
+                    derivedQty = v.positionAmount / v.entryPrice;
                 }
-            } else if (
-                v.riskAmount != null &&
-                v.slPrice != null &&
-                v.entryPrice != null &&
-                editedField !== "quantity"
-            ) {
-                const denom = Math.abs(v.entryPrice - v.slPrice);
-                if (denom > EPS) {
-                    const q = v.riskAmount / denom;
-                    if (Math.abs(q - (v.quantity || 0)) > EPS) {
-                        v.quantity = q;
-                        changed = true;
-                    }
+
+                if (derivedQty != null && Math.abs(derivedQty - (v.quantity ?? 0)) > EPS) {
+                    v.quantity = derivedQty;
+                    changed = true;
                 }
             }
 
-            if (v.quantity != null && v.entryPrice != null) {
+            // FIX: Guard positionAmount so we never overwrite what the user typed
+            if (
+                editedField !== "positionAmount" &&
+                v.quantity != null &&
+                v.entryPrice != null
+            ) {
                 const pos = v.quantity * v.entryPrice;
-                if (Math.abs(pos - (v.positionAmount || 0)) > EPS) {
+                if (Math.abs(pos - (v.positionAmount ?? 0)) > EPS) {
                     v.positionAmount = pos;
                     changed = true;
                 }
             }
 
-            // Risk Amount
+            // Derive Risk Amount from Quantity × (Entry − SL)
             if (
+                editedField !== "riskAmount" &&
                 v.quantity != null &&
                 v.entryPrice != null &&
-                v.slPrice != null &&
-                editedField !== "riskAmount"
+                v.slPrice != null
             ) {
                 const ra = Math.abs(v.entryPrice - v.slPrice) * v.quantity;
-                if (Math.abs(ra - (v.riskAmount || 0)) > EPS) {
+                if (Math.abs(ra - (v.riskAmount ?? 0)) > EPS) {
                     v.riskAmount = ra;
                     changed = true;
                 }
             }
 
-            // RR
+            // ── Risk : Reward ───────────────────────────────────────────────────
             if (
                 v.entryPrice != null &&
                 v.slPrice != null &&
@@ -227,21 +253,22 @@ export default function CalculatorScreen() {
                 const denom = Math.abs(v.entryPrice - v.slPrice);
                 if (denom > EPS) {
                     const rr = (v.targetPrice - v.entryPrice) / denom;
-                    if (Math.abs(rr - (v.riskReward || 0)) > EPS) {
+                    if (Math.abs(rr - (v.riskReward ?? 0)) > EPS) {
                         v.riskReward = rr;
                         changed = true;
                     }
                 }
             }
 
-            // Profit
+            // ── Profit Amount ───────────────────────────────────────────────────
             if (
+                editedField !== "profitAmount" &&
                 v.quantity != null &&
                 v.entryPrice != null &&
                 v.targetPrice != null
             ) {
                 const p = (v.targetPrice - v.entryPrice) * v.quantity;
-                if (Math.abs(p - (v.profitAmount || 0)) > EPS) {
+                if (Math.abs(p - (v.profitAmount ?? 0)) > EPS) {
                     v.profitAmount = p;
                     changed = true;
                 }
