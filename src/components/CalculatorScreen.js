@@ -21,13 +21,16 @@ const FIELD_LABELS = {
     profitAmount: "Profit Amount",
 };
 
+const EMPTY_VALS = Object.keys(FIELD_LABELS).reduce(
+    (acc, k) => ({ ...acc, [k]: "" }),
+    {}
+);
+
 const EPS = 1e-9;
 
 export default function CalculatorScreen() {
     const [theme, setTheme] = useState("light");
-    const [vals, setVals] = useState(
-        Object.keys(FIELD_LABELS).reduce((acc, k) => ({ ...acc, [k]: "" }), {})
-    );
+    const [vals, setVals] = useState(EMPTY_VALS);
     const [errors, setErrors] = useState({});
 
     const activeTheme = theme === "light" ? lightTheme : darkTheme;
@@ -37,6 +40,11 @@ export default function CalculatorScreen() {
         const n = Number(String(s).replace(/,/g, ""));
         return Number.isFinite(n) ? n : null;
     };
+
+    function handleReset() {
+        setVals(EMPTY_VALS);
+        setErrors({});
+    }
 
     function setInput(field, rawValue) {
         // Block negative sign entirely
@@ -79,7 +87,6 @@ export default function CalculatorScreen() {
 
         setErrors((p) => ({ ...p, [field]: null }));
 
-        // Build a fully numeric snapshot of current values, then apply the new edit
         const numericVals = {};
         for (const k of Object.keys(FIELD_LABELS)) {
             numericVals[k] = k === field ? numVal : toNum(vals[k]);
@@ -87,7 +94,6 @@ export default function CalculatorScreen() {
 
         const derived = deriveIterative(numericVals, field);
 
-        // Format derived values back to strings
         const formatted = {};
         for (const k of Object.keys(derived)) {
             const v = derived[k];
@@ -100,8 +106,6 @@ export default function CalculatorScreen() {
             }
         }
 
-        // Preserve the raw string the user is currently typing so the cursor
-        // doesn't jump (e.g. "100." mid-entry stays as "100." not "100")
         formatted[field] = rawValue;
 
         setVals(formatted);
@@ -115,9 +119,6 @@ export default function CalculatorScreen() {
         while (changed && iter++ < 40) {
             changed = false;
 
-            // ── SL Price ↔ SL % ────────────────────────────────────────────────
-
-            // Derive SL% from SL Price (only when user didn't type SL%)
             if (
                 editedField !== "slPercent" &&
                 v.entryPrice != null &&
@@ -131,7 +132,6 @@ export default function CalculatorScreen() {
                 }
             }
 
-            // Derive SL Price from SL% (only when user didn't type SL Price)
             if (
                 editedField !== "slPrice" &&
                 v.entryPrice != null &&
@@ -144,9 +144,6 @@ export default function CalculatorScreen() {
                 }
             }
 
-            // ── Target Price ↔ Target % ─────────────────────────────────────────
-
-            // Derive Target% from Target Price
             if (
                 editedField !== "targetPercent" &&
                 v.entryPrice != null &&
@@ -161,7 +158,6 @@ export default function CalculatorScreen() {
                 }
             }
 
-            // Derive Target Price from Target%
             if (
                 editedField !== "targetPrice" &&
                 v.entryPrice != null &&
@@ -174,11 +170,6 @@ export default function CalculatorScreen() {
                 }
             }
 
-            // ── Quantity ↔ Position Amount ↔ Risk Amount ────────────────────────
-
-            // FIX: Each derivation path for Quantity must guard the editedField
-            // so we don't circularly overwrite the field the user is typing in.
-
             if (editedField !== "quantity") {
                 let derivedQty = null;
 
@@ -188,7 +179,6 @@ export default function CalculatorScreen() {
                     v.entryPrice != null &&
                     Math.abs(v.entryPrice) > EPS
                 ) {
-                    // User typed Position Amount → derive Quantity
                     derivedQty = v.positionAmount / v.entryPrice;
                 } else if (
                     editedField !== "positionAmount" &&
@@ -196,7 +186,6 @@ export default function CalculatorScreen() {
                     v.slPrice != null &&
                     v.entryPrice != null
                 ) {
-                    // User typed Risk Amount (or other) → derive Quantity from Risk
                     const denom = Math.abs(v.entryPrice - v.slPrice);
                     if (denom > EPS) {
                         derivedQty = v.riskAmount / denom;
@@ -207,7 +196,6 @@ export default function CalculatorScreen() {
                     v.entryPrice != null &&
                     Math.abs(v.entryPrice) > EPS
                 ) {
-                    // Position Amount already known from a prior iteration → keep qty in sync
                     derivedQty = v.positionAmount / v.entryPrice;
                 }
 
@@ -217,7 +205,6 @@ export default function CalculatorScreen() {
                 }
             }
 
-            // FIX: Guard positionAmount so we never overwrite what the user typed
             if (
                 editedField !== "positionAmount" &&
                 v.quantity != null &&
@@ -230,7 +217,6 @@ export default function CalculatorScreen() {
                 }
             }
 
-            // Derive Risk Amount from Quantity × (Entry − SL)
             if (
                 editedField !== "riskAmount" &&
                 v.quantity != null &&
@@ -244,7 +230,6 @@ export default function CalculatorScreen() {
                 }
             }
 
-            // ── Risk : Reward ───────────────────────────────────────────────────
             if (
                 v.entryPrice != null &&
                 v.slPrice != null &&
@@ -260,7 +245,6 @@ export default function CalculatorScreen() {
                 }
             }
 
-            // ── Profit Amount ───────────────────────────────────────────────────
             if (
                 editedField !== "profitAmount" &&
                 v.quantity != null &&
@@ -295,14 +279,25 @@ export default function CalculatorScreen() {
                     Universal Trading Calc
                 </Text>
 
-                <TouchableOpacity
-                    style={[styles.themeToggle, activeTheme.toggle]}
-                    onPress={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
-                >
-                    <Text style={{ color: activeTheme.title.color }}>
-                        {theme === "light" ? "🌙 Dark" : "☀️ Light"}
-                    </Text>
-                </TouchableOpacity>
+                <View style={styles.headerActions}>
+                    <TouchableOpacity
+                        style={[styles.resetButton, activeTheme.resetButton]}
+                        onPress={handleReset}
+                    >
+                        <Text style={[styles.resetButtonText, activeTheme.resetButtonText]}>
+                            ↺ Reset
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.themeToggle, activeTheme.toggle]}
+                        onPress={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
+                    >
+                        <Text style={{ color: activeTheme.title.color }}>
+                            {theme === "light" ? "🌙 Dark" : "☀️ Light"}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
             </View>
 
             <View style={styles.grid}>

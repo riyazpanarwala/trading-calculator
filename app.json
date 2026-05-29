@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Trading Calculator",
-    "slug": "trading-calc",
+    "name": "Universal Trading Calculator",
+    "slug": "universal-trading-calc",
     "owner": "riyazpanarwala",
     "version": "1.0.0",
     "orientation": "portrait",
