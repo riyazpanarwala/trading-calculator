@@ -1,27 +1,27 @@
 import { StyleSheet } from "react-native";
 
 export const lightTheme = {
-    container: { backgroundColor: "#FFFFFF" },
-    title: { color: "#000" },
-    label: { color: "#000" },
-    placeholder: { color: "#999" },
-    input: { color: "#000", backgroundColor: "#F3F3F3" },
+    container:  { backgroundColor: "#FFFFFF" },
+    title:      { color: "#000" },
+    label:      { color: "#000" },
+    placeholder:{ color: "#999" },
+    input:      { color: "#000", backgroundColor: "#F3F3F3" },
     missingBox: { backgroundColor: "#ffecec" },
-    toggle: { backgroundColor: "#e0e0e0" },
-    resetButton: { backgroundColor: "#ff4d4d" },
-    resetButtonText: { color: "#fff" },
+    toggle:     { backgroundColor: "#e0e0e0" },
+    // card surface used by analysis panels
+    card:       { backgroundColor: "#F3F3F3" },
 };
 
 export const darkTheme = {
-    container: { backgroundColor: "#000000" },
-    title: { color: "#FFF" },
-    label: { color: "#FFF" },
-    placeholder: { color: "#AAA" },
-    input: { color: "#FFF", backgroundColor: "#222" },
+    container:  { backgroundColor: "#000000" },
+    title:      { color: "#FFF" },
+    label:      { color: "#FFF" },
+    placeholder:{ color: "#AAA" },
+    input:      { color: "#FFF", backgroundColor: "#222" },
     missingBox: { backgroundColor: "#331111" },
-    toggle: { backgroundColor: "#333" },
-    resetButton: { backgroundColor: "#8b0000" },
-    resetButtonText: { color: "#fff" },
+    toggle:     { backgroundColor: "#333" },
+    // card surface used by analysis panels
+    card:       { backgroundColor: "#1C1C1E" },
 };
 
 export default StyleSheet.create({
@@ -34,33 +34,14 @@ export default StyleSheet.create({
         marginBottom: 20,
     },
 
-    headerActions: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 8,
-    },
-
     title: {
         fontSize: 22,
         fontWeight: "700",
-        flexShrink: 1,
-        marginRight: 8,
     },
 
     themeToggle: {
         padding: 10,
         borderRadius: 8,
-    },
-
-    resetButton: {
-        paddingVertical: 8,
-        paddingHorizontal: 14,
-        borderRadius: 8,
-    },
-
-    resetButtonText: {
-        fontSize: 14,
-        fontWeight: "600",
     },
 
     grid: {
