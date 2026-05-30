@@ -1,6 +1,6 @@
 {
   "name": "trading-calc",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "index.js",
   "scripts": {
     "start": "expo start",
@@ -14,17 +14,17 @@
     "build:ios": "eas build --profile production --platform ios"
   },
   "dependencies": {
-    "expo": "~54.0.28",
-    "expo-file-system": "~18.0.12",
-    "expo-sharing": "~13.0.1",
+    "expo": "~54.0.35",
+    "expo-file-system": "~19.0.23",
+    "expo-sharing": "~14.0.8",
     "expo-status-bar": "~3.0.9",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-native": "0.81.5",
     "react-native-safe-area-context": "~5.6.0",
-    "react-native-svg": "^15.11.2",
-    "react-native-view-shot": "^4.0.3",
-    "react-native-web": "^0.21.0"
+    "react-native-svg": "~15.12.1",
+    "react-native-view-shot": "4.0.3",
+    "react-native-web": "~0.21.0"
   },
   "private": true
 }
