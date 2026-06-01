@@ -69,7 +69,6 @@ function RRBar({ riskReward, riskAmount, profitAmount, theme }) {
     const rrNum = parseFloat(riskReward);
     if (isNaN(rrNum) || rrNum <= 0) return null;
 
-    // Cap the visual ratio so the bar stays legible even at R:R 10+
     const cappedRR = Math.min(rrNum, 5);
     const total = 1 + cappedRR;
     const riskPct = (1 / total) * 100;
@@ -82,7 +81,6 @@ function RRBar({ riskReward, riskAmount, profitAmount, theme }) {
         <View style={[rrBarStyles.container, activeTheme.card]}>
             <Text style={[rrBarStyles.heading, activeTheme.label]}>Risk / Reward</Text>
 
-            {/* Bar */}
             <View style={rrBarStyles.barRow}>
                 <View style={[rrBarStyles.riskSegment, { flex: riskPct }]}>
                     <Text style={rrBarStyles.segLabel}>Risk</Text>
@@ -94,7 +92,6 @@ function RRBar({ riskReward, riskAmount, profitAmount, theme }) {
                 </View>
             </View>
 
-            {/* Amounts */}
             {!isNaN(riskAmt) && !isNaN(profitAmt) && (
                 <View style={rrBarStyles.amountsRow}>
                     <Text style={rrBarStyles.riskAmtText}>
@@ -132,7 +129,6 @@ function PriceLadder({ entryPrice, slPrice, targetPrice, theme }) {
 
     const chartH = H - topPad - bottomPad;
 
-    // Map price → Y (higher price = lower Y)
     const minP = sl    * 0.999;
     const maxP = target * 1.001;
     const range = maxP - minP;
@@ -160,11 +156,9 @@ function PriceLadder({ entryPrice, slPrice, targetPrice, theme }) {
             <Text style={[ladderStyles.heading, activeTheme.label]}>Price Ladder</Text>
 
             <Svg width={W} height={H}>
-                {/* Vertical axis spine */}
                 <Line x1={lineX} y1={topPad} x2={lineX} y2={H - bottomPad}
                     stroke={axisColor} strokeWidth={1.5} />
 
-                {/* ── Target zone (entry → target) ── */}
                 <Rect
                     x={lineX - 6}
                     y={yTarget}
@@ -174,7 +168,6 @@ function PriceLadder({ entryPrice, slPrice, targetPrice, theme }) {
                     opacity={0.18}
                 />
 
-                {/* ── Risk zone (sl → entry) ── */}
                 <Rect
                     x={lineX - 6}
                     y={yEntry}
@@ -184,7 +177,6 @@ function PriceLadder({ entryPrice, slPrice, targetPrice, theme }) {
                     opacity={0.18}
                 />
 
-                {/* ── Target tick ── */}
                 <Line x1={lineX - 8} y1={yTarget} x2={lineX + 8} y2={yTarget}
                     stroke={targetColor} strokeWidth={2.5} strokeLinecap="round" />
                 <Circle cx={lineX} cy={yTarget} r={5} fill={targetColor} />
@@ -195,7 +187,6 @@ function PriceLadder({ entryPrice, slPrice, targetPrice, theme }) {
                     {priceFmt(target)}
                 </SvgText>
 
-                {/* ── Entry tick ── */}
                 <Line x1={lineX - 8} y1={yEntry} x2={lineX + 8} y2={yEntry}
                     stroke={entryColor} strokeWidth={2.5} strokeLinecap="round" />
                 <Circle cx={lineX} cy={yEntry} r={5} fill={entryColor} />
@@ -206,7 +197,6 @@ function PriceLadder({ entryPrice, slPrice, targetPrice, theme }) {
                     {priceFmt(entry)}
                 </SvgText>
 
-                {/* ── SL tick ── */}
                 <Line x1={lineX - 8} y1={ySL} x2={lineX + 8} y2={ySL}
                     stroke={slColor} strokeWidth={2.5} strokeLinecap="round" />
                 <Circle cx={lineX} cy={ySL} r={5} fill={slColor} />
@@ -217,8 +207,6 @@ function PriceLadder({ entryPrice, slPrice, targetPrice, theme }) {
                     {priceFmt(sl)}
                 </SvgText>
 
-                {/* ── % labels on the right ── */}
-                {/* Risk % */}
                 <SvgText
                     x={lineX - 22}
                     y={(yEntry + ySL) / 2 + 4}
@@ -230,7 +218,6 @@ function PriceLadder({ entryPrice, slPrice, targetPrice, theme }) {
                     {(((entry - sl) / entry) * 100).toFixed(1)}%
                 </SvgText>
 
-                {/* Reward % */}
                 <SvgText
                     x={lineX - 22}
                     y={(yEntry + yTarget) / 2 + 4}
@@ -276,7 +263,6 @@ function ShareButton({ captureViewRef, vals, theme }) {
         }
     };
 
-    // Only show if we have meaningful data to share
     const hasData =
         vals.entryPrice !== "" &&
         (vals.slPrice !== "" || vals.targetPrice !== "");
@@ -309,13 +295,11 @@ export default function CalculatorScreen() {
 
     const activeTheme = theme === "light" ? lightTheme : darkTheme;
 
-    // ── Reset all fields ──────────────────────────────────────────────────────
     function handleReset() {
         setVals(Object.keys(FIELD_LABELS).reduce((acc, k) => ({ ...acc, [k]: "" }), {}));
         setErrors({});
     }
 
-    // ── Copy all filled results to clipboard ──────────────────────────────────
     function handleCopy() {
         const lines = Object.keys(FIELD_LABELS)
             .filter((k) => vals[k] !== "")
@@ -486,21 +470,21 @@ export default function CalculatorScreen() {
         return Object.keys(FIELD_LABELS).filter((k) => vals[k] === "");
     }, [vals, userFilledCount]);
 
-    // Check if visual section has enough data to render
     const hasVisuals =
         vals.riskReward !== "" ||
         (vals.entryPrice !== "" && vals.slPrice !== "" && vals.targetPrice !== "");
 
     return (
         <ScrollView style={[styles.container, activeTheme.container]}>
-            {/* ── Capture wrapper starts here ── */}
             <View ref={captureViewRef} style={activeTheme.container}>
 
+                {/* ── Header ── */}
                 <View style={styles.header}>
                     <Text style={[styles.title, activeTheme.title]}>
                         Universal Trading Calc
                     </Text>
-                    <View style={{ flexDirection: "row", gap: 8 }}>
+                    {/* Buttons grouped so they stay together and never split */}
+                    <View style={styles.headerButtons}>
                         <TouchableOpacity
                             style={[styles.themeToggle, activeTheme.toggle]}
                             onPress={handleReset}
@@ -551,7 +535,6 @@ export default function CalculatorScreen() {
                             📊 Analysis
                         </Text>
 
-                        {/* Row 1: Badge + R:R Bar */}
                         <View style={visualStyles.row}>
                             <TradeQualityBadge
                                 riskReward={vals.riskReward}
@@ -565,7 +548,6 @@ export default function CalculatorScreen() {
                             />
                         </View>
 
-                        {/* Row 2: Price Ladder (full width) */}
                         <PriceLadder
                             entryPrice={vals.entryPrice}
                             slPrice={vals.slPrice}
@@ -596,7 +578,6 @@ export default function CalculatorScreen() {
                     </Text>
                 </View>
 
-                {/* ── Copy Results button ── */}
                 {userFilledCount > 0 && (
                     <TouchableOpacity
                         style={[
@@ -614,9 +595,7 @@ export default function CalculatorScreen() {
 
                 <View style={{ height: 16 }} />
             </View>
-            {/* ── End capture wrapper ── */}
 
-            {/* Share button sits outside the capture so it doesn't appear in the image */}
             <ShareButton
                 captureViewRef={captureViewRef}
                 vals={vals}

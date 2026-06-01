@@ -8,7 +8,6 @@ export const lightTheme = {
     input:      { color: "#000", backgroundColor: "#F3F3F3" },
     missingBox: { backgroundColor: "#ffecec" },
     toggle:     { backgroundColor: "#e0e0e0" },
-    // card surface used by analysis panels
     card:       { backgroundColor: "#F3F3F3" },
 };
 
@@ -20,28 +19,42 @@ export const darkTheme = {
     input:      { color: "#FFF", backgroundColor: "#222" },
     missingBox: { backgroundColor: "#331111" },
     toggle:     { backgroundColor: "#333" },
-    // card surface used by analysis panels
     card:       { backgroundColor: "#1C1C1E" },
 };
 
 export default StyleSheet.create({
-    container: { flex: 1, padding: 20 },
+    container: { flex: 1, padding: 16 },
 
     header: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
         marginBottom: 20,
+        flexWrap: "wrap",
+        rowGap: 8,
+        columnGap: 8,
     },
 
     title: {
-        fontSize: 22,
+        fontSize: 18,
         fontWeight: "700",
+        flexShrink: 1,
+        flexGrow: 1,
+        minWidth: 160,
+    },
+
+    headerButtons: {
+        flexDirection: "row",
+        gap: 8,
+        flexShrink: 0,
     },
 
     themeToggle: {
-        padding: 10,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
         borderRadius: 8,
+        alignItems: "center",
+        justifyContent: "center",
     },
 
     grid: {
