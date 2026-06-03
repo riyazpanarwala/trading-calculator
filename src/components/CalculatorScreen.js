@@ -7,8 +7,8 @@ import {
     ScrollView,
     Share,
     Platform,
-    Clipboard,
 } from "react-native";
+import * as Clipboard from "expo-clipboard";
 import { captureRef } from "react-native-view-shot";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
@@ -300,12 +300,12 @@ export default function CalculatorScreen() {
         setErrors({});
     }
 
-    function handleCopy() {
+    async function handleCopy() {
         const lines = Object.keys(FIELD_LABELS)
             .filter((k) => vals[k] !== "")
             .map((k) => `${FIELD_LABELS[k]}: ${vals[k]}`);
         if (lines.length === 0) return;
-        Clipboard.setString(lines.join("\n"));
+        await Clipboard.setStringAsync(lines.join("\n"));
         setCopyFeedback(true);
         setTimeout(() => setCopyFeedback(false), 2000);
     }
@@ -483,7 +483,6 @@ export default function CalculatorScreen() {
                     <Text style={[styles.title, activeTheme.title]}>
                         Universal Trading Calc
                     </Text>
-                    {/* Buttons grouped so they stay together and never split */}
                     <View style={styles.headerButtons}>
                         <TouchableOpacity
                             style={[styles.themeToggle, activeTheme.toggle]}
