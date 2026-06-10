@@ -358,6 +358,9 @@ export default function CalculatorScreen() {
             const v = derived[k];
             if (v == null) {
                 formatted[k] = "";
+            } else if (k === "quantity") {
+                // FIX 1: Quantity always floored to integer
+                formatted[k] = String(Math.floor(v));
             } else if (Math.abs(v - Math.round(v)) < 1e-6) {
                 formatted[k] = String(Math.round(v));
             } else {
@@ -377,6 +380,7 @@ export default function CalculatorScreen() {
         while (changed && iter++ < 40) {
             changed = false;
 
+            // SL % from SL Price
             if (
                 editedField !== "slPercent" &&
                 v.entryPrice != null && v.slPrice != null && v.entryPrice > EPS
@@ -385,11 +389,31 @@ export default function CalculatorScreen() {
                 if (Math.abs(slPercent - (v.slPercent ?? 0)) > EPS) { v.slPercent = slPercent; changed = true; }
             }
 
+            // SL Price from SL %
             if (editedField !== "slPrice" && v.entryPrice != null && v.slPercent != null) {
                 const slPrice = v.entryPrice * (1 - v.slPercent / 100);
                 if (Math.abs(slPrice - (v.slPrice ?? 0)) > EPS) { v.slPrice = slPrice; changed = true; }
             }
 
+            // FIX 2: Derive SL Price from entryPrice + riskAmount + quantity (floored integer)
+            // When user provides Entry Price, Risk Amount, Position Amount → derive SL Price
+            if (
+                editedField !== "slPrice" && editedField !== "slPercent" &&
+                v.slPrice == null && v.slPercent == null &&
+                v.entryPrice != null && v.riskAmount != null
+            ) {
+                // Use floored quantity if available
+                const qty = v.quantity != null ? Math.floor(v.quantity) : null;
+                if (qty != null && qty > EPS) {
+                    const slPrice = v.entryPrice - (v.riskAmount / qty);
+                    if (slPrice > 0 && Math.abs(slPrice - (v.slPrice ?? 0)) > EPS) {
+                        v.slPrice = slPrice;
+                        changed = true;
+                    }
+                }
+            }
+
+            // Target % from Target Price
             if (
                 editedField !== "targetPercent" &&
                 v.entryPrice != null && v.targetPrice != null && v.entryPrice > EPS
@@ -398,48 +422,55 @@ export default function CalculatorScreen() {
                 if (Math.abs(targetPercent - (v.targetPercent ?? 0)) > EPS) { v.targetPercent = targetPercent; changed = true; }
             }
 
+            // Target Price from Target %
             if (editedField !== "targetPrice" && v.entryPrice != null && v.targetPercent != null) {
                 const targetPrice = v.entryPrice * (1 + v.targetPercent / 100);
                 if (Math.abs(targetPrice - (v.targetPrice ?? 0)) > EPS) { v.targetPrice = targetPrice; changed = true; }
             }
 
+            // Quantity (always floor to integer)
             if (editedField !== "quantity") {
                 let derivedQty = null;
                 if (
                     editedField === "positionAmount" &&
                     v.positionAmount != null && v.entryPrice != null && Math.abs(v.entryPrice) > EPS
                 ) {
-                    derivedQty = v.positionAmount / v.entryPrice;
+                    derivedQty = Math.floor(v.positionAmount / v.entryPrice);
                 } else if (
                     editedField !== "positionAmount" &&
                     v.riskAmount != null && v.slPrice != null && v.entryPrice != null
                 ) {
                     const denom = Math.abs(v.entryPrice - v.slPrice);
-                    if (denom > EPS) derivedQty = v.riskAmount / denom;
+                    if (denom > EPS) derivedQty = Math.floor(v.riskAmount / denom);
                 } else if (
                     editedField !== "positionAmount" &&
                     v.positionAmount != null && v.entryPrice != null && Math.abs(v.entryPrice) > EPS
                 ) {
-                    derivedQty = v.positionAmount / v.entryPrice;
+                    derivedQty = Math.floor(v.positionAmount / v.entryPrice);
                 }
                 if (derivedQty != null && Math.abs(derivedQty - (v.quantity ?? 0)) > EPS) {
                     v.quantity = derivedQty; changed = true;
                 }
             }
 
+            // Position Amount from Quantity (use floored quantity)
             if (editedField !== "positionAmount" && v.quantity != null && v.entryPrice != null) {
-                const pos = v.quantity * v.entryPrice;
+                const qty = Math.floor(v.quantity);
+                const pos = qty * v.entryPrice;
                 if (Math.abs(pos - (v.positionAmount ?? 0)) > EPS) { v.positionAmount = pos; changed = true; }
             }
 
+            // Risk Amount from Quantity (use floored quantity)
             if (
                 editedField !== "riskAmount" &&
                 v.quantity != null && v.entryPrice != null && v.slPrice != null
             ) {
-                const ra = Math.abs(v.entryPrice - v.slPrice) * v.quantity;
+                const qty = Math.floor(v.quantity);
+                const ra = Math.abs(v.entryPrice - v.slPrice) * qty;
                 if (Math.abs(ra - (v.riskAmount ?? 0)) > EPS) { v.riskAmount = ra; changed = true; }
             }
 
+            // Risk : Reward
             if (v.entryPrice != null && v.slPrice != null && v.targetPrice != null) {
                 const denom = Math.abs(v.entryPrice - v.slPrice);
                 if (denom > EPS) {
@@ -448,11 +479,13 @@ export default function CalculatorScreen() {
                 }
             }
 
+            // Profit Amount from Quantity (use floored quantity)
             if (
                 editedField !== "profitAmount" &&
                 v.quantity != null && v.entryPrice != null && v.targetPrice != null
             ) {
-                const p = (v.targetPrice - v.entryPrice) * v.quantity;
+                const qty = Math.floor(v.quantity);
+                const p = (v.targetPrice - v.entryPrice) * qty;
                 if (Math.abs(p - (v.profitAmount ?? 0)) > EPS) { v.profitAmount = p; changed = true; }
             }
         }
