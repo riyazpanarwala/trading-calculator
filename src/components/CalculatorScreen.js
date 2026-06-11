@@ -428,7 +428,7 @@ export default function CalculatorScreen() {
                 if (Math.abs(targetPrice - (v.targetPrice ?? 0)) > EPS) { v.targetPrice = targetPrice; changed = true; }
             }
 
-            // Quantity (always floor to integer)
+            // Quantity (always floor to integer — store as integer in v directly)
             if (editedField !== "quantity") {
                 let derivedQty = null;
                 if (
@@ -448,9 +448,13 @@ export default function CalculatorScreen() {
                 ) {
                     derivedQty = Math.floor(v.positionAmount / v.entryPrice);
                 }
-                if (derivedQty != null && Math.abs(derivedQty - (v.quantity ?? 0)) > EPS) {
+                if (derivedQty != null && derivedQty !== (v.quantity ?? -1)) {
                     v.quantity = derivedQty; changed = true;
                 }
+            }
+            // Always ensure quantity stored as integer (floor) even if set by other paths
+            if (v.quantity != null && v.quantity !== Math.floor(v.quantity)) {
+                v.quantity = Math.floor(v.quantity); changed = true;
             }
 
             // Position Amount from Quantity (use floored quantity)
@@ -470,12 +474,28 @@ export default function CalculatorScreen() {
                 if (Math.abs(ra - (v.riskAmount ?? 0)) > EPS) { v.riskAmount = ra; changed = true; }
             }
 
-            // Risk : Reward
+            // Risk : Reward → derive R:R from prices
             if (v.entryPrice != null && v.slPrice != null && v.targetPrice != null) {
                 const denom = Math.abs(v.entryPrice - v.slPrice);
                 if (denom > EPS) {
                     const rr = (v.targetPrice - v.entryPrice) / denom;
                     if (Math.abs(rr - (v.riskReward ?? 0)) > EPS) { v.riskReward = rr; changed = true; }
+                }
+            }
+
+            // Target Price from R:R + Entry + SL (reverse R:R derivation)
+            if (
+                editedField !== "targetPrice" && editedField !== "targetPercent" &&
+                v.targetPrice == null && v.targetPercent == null &&
+                v.riskReward != null && v.entryPrice != null && v.slPrice != null
+            ) {
+                const slDiff = Math.abs(v.entryPrice - v.slPrice);
+                if (slDiff > EPS) {
+                    const targetPrice = v.entryPrice + v.riskReward * slDiff;
+                    if (targetPrice > v.entryPrice && Math.abs(targetPrice - (v.targetPrice ?? 0)) > EPS) {
+                        v.targetPrice = targetPrice;
+                        changed = true;
+                    }
                 }
             }
 
