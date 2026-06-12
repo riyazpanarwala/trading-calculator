@@ -329,6 +329,30 @@ export default function CalculatorScreen() {
         return Number.isFinite(n) ? n : NaN; // NaN signals "user typed something, but it's invalid"
     };
 
+    // Accepts plain numbers ("2", "2.5") or ratio format ("1:2", "1 : 2.5")
+    // Returns the normalized R:R as reward/risk, or NaN if invalid.
+    const parseRiskReward = (raw) => {
+        if (raw === null || raw === undefined || raw === "") return null;
+
+        const trimmed = String(raw).trim();
+
+        if (trimmed.includes(":")) {
+            const parts = trimmed.split(":").map((p) => p.trim());
+            if (parts.length !== 2) return NaN;
+
+            const risk = Number(parts[0]);
+            const reward = Number(parts[1]);
+
+            if (!Number.isFinite(risk) || !Number.isFinite(reward)) return NaN;
+            if (risk <= 0 || reward <= 0) return NaN;
+
+            return reward / risk;
+        }
+
+        const n = Number(trimmed.replace(/,/g, ""));
+        return Number.isFinite(n) ? n : NaN;
+    };
+
     // Only update the raw text — no derivation, no validation, while typing.
     function setInput(field, rawValue) {
         setVals((p) => ({ ...p, [field]: rawValue }));
@@ -354,6 +378,18 @@ export default function CalculatorScreen() {
                 numericVals[k] = null;
                 continue;
             }
+
+            if (k === "riskReward") {
+                const n = parseRiskReward(raw);
+                if (Number.isNaN(n)) {
+                    fieldErrors[k] = "Invalid format. Use e.g. 2 or 1:2";
+                    numericVals[k] = null;
+                } else {
+                    numericVals[k] = n;
+                }
+                continue;
+            }
+
             const n = toNum(raw);
             if (Number.isNaN(n)) {
                 fieldErrors[k] = "Invalid number";
@@ -746,9 +782,9 @@ export default function CalculatorScreen() {
                                     activeTheme.input,
                                     (errors[key] || missing.includes(key)) ? styles.missing : null,
                                 ]}
-                                keyboardType="numeric"
+                                keyboardType={key === "riskReward" ? "default" : "numeric"}
                                 value={vals[key]}
-                                placeholder={FIELD_LABELS[key]}
+                                placeholder={key === "riskReward" ? "e.g. 2 or 1:2" : FIELD_LABELS[key]}
                                 placeholderTextColor={activeTheme.placeholder.color}
                                 onChangeText={(t) => setInput(key, t)}
                             />
