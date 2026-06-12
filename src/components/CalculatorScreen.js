@@ -28,6 +28,13 @@ const FIELD_LABELS = {
     profitAmount: "Profit Amount",
 };
 
+// Fields that must never be negative
+const NON_NEGATIVE_FIELDS = [
+    "entryPrice", "slPrice", "targetPrice", "positionAmount",
+    "quantity", "riskAmount", "profitAmount", "targetPercent",
+    "slPercent", "riskReward",
+];
+
 const EPS = 1e-9;
 
 // ─── Trade Quality Badge ────────────────────────────────────────────────────
@@ -290,6 +297,9 @@ export default function CalculatorScreen() {
         Object.keys(FIELD_LABELS).reduce((acc, k) => ({ ...acc, [k]: "" }), {})
     );
     const [errors, setErrors] = useState({});
+    const [missing, setMissing] = useState([]);
+    const [calculated, setCalculated] = useState(false);
+    const [globalMessage, setGlobalMessage] = useState(null); // { type: 'error'|'info', text: '...' }
     const captureViewRef = useRef(null);
     const [copyFeedback, setCopyFeedback] = useState(false);
 
@@ -298,6 +308,9 @@ export default function CalculatorScreen() {
     function handleReset() {
         setVals(Object.keys(FIELD_LABELS).reduce((acc, k) => ({ ...acc, [k]: "" }), {}));
         setErrors({});
+        setMissing([]);
+        setCalculated(false);
+        setGlobalMessage(null);
     }
 
     async function handleCopy() {
@@ -313,53 +326,211 @@ export default function CalculatorScreen() {
     const toNum = (s) => {
         if (s === null || s === undefined || s === "") return null;
         const n = Number(String(s).replace(/,/g, ""));
-        return Number.isFinite(n) ? n : null;
+        return Number.isFinite(n) ? n : NaN; // NaN signals "user typed something, but it's invalid"
     };
 
+    // Only update the raw text — no derivation, no validation, while typing.
     function setInput(field, rawValue) {
-        if (rawValue.includes("-")) rawValue = rawValue.replace(/-/g, "");
-
-        const numVal = toNum(rawValue);
-
-        if (
-            numVal != null &&
-            [
-                "entryPrice", "slPrice", "targetPrice", "positionAmount",
-                "quantity", "riskAmount", "profitAmount", "targetPercent",
-            ].includes(field) &&
-            numVal < 0
-        ) {
-            setVals((p) => ({ ...p, [field]: "" }));
-            setErrors((p) => ({ ...p, [field]: null }));
-            return;
+        setVals((p) => ({ ...p, [field]: rawValue }));
+        // Clear stale state once user starts editing again
+        if (calculated) {
+            setCalculated(false);
+            setGlobalMessage(null);
         }
+        if (errors[field]) {
+            setErrors((p) => ({ ...p, [field]: null }));
+        }
+    }
 
-        if (field === "slPercent" && numVal != null) {
-            if (numVal < 0 || numVal > 100) {
-                setErrors((p) => ({
-                    ...p,
-                    [field]: "Percentage must be between 0 and 100",
-                }));
-                return;
+    // ─── Calculate button handler ───────────────────────────────────────────
+    function handleCalculate() {
+        const fieldErrors = {};
+        const numericVals = {};
+
+        // STEP 1: Parse every field, catch non-numeric / malformed input
+        for (const k of Object.keys(FIELD_LABELS)) {
+            const raw = vals[k];
+            if (raw === "" || raw === null || raw === undefined) {
+                numericVals[k] = null;
+                continue;
+            }
+            const n = toNum(raw);
+            if (Number.isNaN(n)) {
+                fieldErrors[k] = "Invalid number";
+                numericVals[k] = null;
+            } else {
+                numericVals[k] = n;
             }
         }
 
-        setErrors((p) => ({ ...p, [field]: null }));
-
-        const numericVals = {};
-        for (const k of Object.keys(FIELD_LABELS)) {
-            numericVals[k] = k === field ? numVal : toNum(vals[k]);
+        // STEP 2: Negative value checks
+        for (const k of NON_NEGATIVE_FIELDS) {
+            const n = numericVals[k];
+            if (n != null && n < 0 && !fieldErrors[k]) {
+                fieldErrors[k] = "Value cannot be negative";
+                numericVals[k] = null;
+            }
         }
 
-        const derived = deriveIterative(numericVals, field);
+        // STEP 3: SL % range check (0-100)
+        if (numericVals.slPercent != null && !fieldErrors.slPercent) {
+            if (numericVals.slPercent > 100) {
+                fieldErrors.slPercent = "SL % cannot exceed 100";
+                numericVals.slPercent = null;
+            }
+        }
 
+        // STEP 4: If any field-level errors exist, stop here
+        if (Object.keys(fieldErrors).length > 0) {
+            setErrors(fieldErrors);
+            setMissing([]);
+            setCalculated(false);
+            setGlobalMessage({
+                type: "error",
+                text: "Please fix the highlighted field(s) before calculating.",
+            });
+            return;
+        }
+
+        // STEP 5: Count how many fields the user actually provided
+        const filledCount = Object.keys(FIELD_LABELS).filter(
+            (k) => numericVals[k] != null
+        ).length;
+
+        if (filledCount === 0) {
+            setErrors({});
+            setMissing([]);
+            setCalculated(false);
+            setGlobalMessage({
+                type: "error",
+                text: "Please enter at least Entry Price plus one more value.",
+            });
+            return;
+        }
+
+        if (numericVals.entryPrice == null) {
+            setErrors({ entryPrice: "Entry Price is required" });
+            setMissing([]);
+            setCalculated(false);
+            setGlobalMessage({
+                type: "error",
+                text: "Entry Price is required to calculate anything else.",
+            });
+            return;
+        }
+
+        if (numericVals.entryPrice <= EPS) {
+            setErrors({ entryPrice: "Entry Price must be greater than 0" });
+            setMissing([]);
+            setCalculated(false);
+            setGlobalMessage({
+                type: "error",
+                text: "Entry Price must be greater than 0.",
+            });
+            return;
+        }
+
+        if (filledCount < 2) {
+            setErrors({});
+            setMissing([]);
+            setCalculated(false);
+            setGlobalMessage({
+                type: "error",
+                text: "Please enter at least one more field besides Entry Price.",
+            });
+            return;
+        }
+
+        // STEP 6: Logical / cross-field validations BEFORE deriving
+        const logicErrors = {};
+
+        // SL Price must be below Entry Price
+        if (numericVals.slPrice != null && numericVals.slPrice >= numericVals.entryPrice) {
+            logicErrors.slPrice = "SL Price must be below Entry Price";
+        }
+
+        // Target Price must be above Entry Price
+        if (numericVals.targetPrice != null && numericVals.targetPrice <= numericVals.entryPrice) {
+            logicErrors.targetPrice = "Target Price must be above Entry Price";
+        }
+
+        // R:R must be > 0 if user-entered directly
+        if (numericVals.riskReward != null && numericVals.riskReward <= 0) {
+            logicErrors.riskReward = "Risk:Reward must be greater than 0";
+        }
+
+        // Risk Amount cannot exceed Position Amount (if both given)
+        if (
+            numericVals.riskAmount != null &&
+            numericVals.positionAmount != null &&
+            numericVals.riskAmount > numericVals.positionAmount
+        ) {
+            logicErrors.riskAmount = "Risk Amount cannot exceed Position Amount";
+        }
+
+        // Quantity must be > 0 if entered directly
+        if (numericVals.quantity != null && numericVals.quantity <= 0) {
+            logicErrors.quantity = "Quantity must be greater than 0";
+        }
+
+        if (Object.keys(logicErrors).length > 0) {
+            setErrors(logicErrors);
+            setMissing([]);
+            setCalculated(false);
+            setGlobalMessage({
+                type: "error",
+                text: "Some values don't make sense together. Please check the highlighted field(s).",
+            });
+            return;
+        }
+
+        // STEP 7: Run the derivation
+        // Determine "editedField" preference order for conflict resolution:
+        // SL Price wins over SL %, Target Price wins over Target %,
+        // Quantity wins over Position Amount, when both are provided.
+        let preferredField = null;
+        if (numericVals.slPrice != null && numericVals.slPercent != null) {
+            preferredField = "slPrice"; // SL Price takes priority; recompute slPercent
+        }
+        if (numericVals.targetPrice != null && numericVals.targetPercent != null) {
+            preferredField = preferredField ?? "targetPrice";
+        }
+        if (numericVals.quantity != null && numericVals.positionAmount != null) {
+            preferredField = preferredField ?? "quantity";
+        }
+
+        const derived = deriveIterative(numericVals, preferredField);
+
+        // STEP 8: Sanity-check derived results (catch impossible/garbage outputs)
+        const resultErrors = {};
+        if (derived.quantity != null && derived.quantity <= 0) {
+            resultErrors.quantity = "Calculated Quantity is 0 — check your inputs";
+        }
+        if (derived.riskReward != null && derived.riskReward <= 0) {
+            resultErrors.riskReward = "Calculated Risk:Reward is invalid — check SL/Target vs Entry";
+        }
+        if (derived.slPrice != null && derived.slPrice <= 0) {
+            resultErrors.slPrice = "Calculated SL Price is invalid (≤ 0)";
+        }
+
+        if (Object.keys(resultErrors).length > 0) {
+            setErrors(resultErrors);
+            setMissing([]);
+            setCalculated(false);
+            setGlobalMessage({
+                type: "error",
+                text: "The provided values produce an impossible result. Please review your inputs.",
+            });
+            return;
+        }
+
+        // STEP 9: Format results
         const formatted = {};
-        for (const k of Object.keys(derived)) {
+        for (const k of Object.keys(FIELD_LABELS)) {
             const v = derived[k];
             if (v == null) {
                 formatted[k] = "";
             } else if (k === "quantity") {
-                // FIX 1: Quantity always floored to integer
                 formatted[k] = String(Math.floor(v));
             } else if (Math.abs(v - Math.round(v)) < 1e-6) {
                 formatted[k] = String(Math.round(v));
@@ -367,9 +538,23 @@ export default function CalculatorScreen() {
                 formatted[k] = String(Number(v.toFixed(6)));
             }
         }
-        formatted[field] = rawValue;
 
         setVals(formatted);
+        setErrors({});
+
+        // STEP 10: Check for still-missing fields (only meaningful with enough inputs)
+        const missingFields = Object.keys(FIELD_LABELS).filter((k) => formatted[k] === "");
+        setMissing(missingFields);
+        setCalculated(true);
+
+        if (missingFields.length > 0) {
+            setGlobalMessage({
+                type: "info",
+                text: "Calculated successfully, but some fields couldn't be derived from the given inputs.",
+            });
+        } else {
+            setGlobalMessage({ type: "info", text: "✅ All fields calculated successfully." });
+        }
     }
 
     function deriveIterative(initial, editedField) {
@@ -395,14 +580,12 @@ export default function CalculatorScreen() {
                 if (Math.abs(slPrice - (v.slPrice ?? 0)) > EPS) { v.slPrice = slPrice; changed = true; }
             }
 
-            // FIX 2: Derive SL Price from entryPrice + riskAmount + quantity (floored integer)
-            // When user provides Entry Price, Risk Amount, Position Amount → derive SL Price
+            // Derive SL Price from entryPrice + riskAmount + quantity (floored integer)
             if (
                 editedField !== "slPrice" && editedField !== "slPercent" &&
                 v.slPrice == null && v.slPercent == null &&
                 v.entryPrice != null && v.riskAmount != null
             ) {
-                // Use floored quantity if available
                 const qty = v.quantity != null ? Math.floor(v.quantity) : null;
                 if (qty != null && qty > EPS) {
                     const slPrice = v.entryPrice - (v.riskAmount / qty);
@@ -428,7 +611,7 @@ export default function CalculatorScreen() {
                 if (Math.abs(targetPrice - (v.targetPrice ?? 0)) > EPS) { v.targetPrice = targetPrice; changed = true; }
             }
 
-            // Quantity (always floor to integer — store as integer in v directly)
+            // Quantity (always floor to integer)
             if (editedField !== "quantity") {
                 let derivedQty = null;
                 if (
@@ -518,14 +701,10 @@ export default function CalculatorScreen() {
         [vals]
     );
 
-    const missing = useMemo(() => {
-        if (userFilledCount <= 3) return [];
-        return Object.keys(FIELD_LABELS).filter((k) => vals[k] === "");
-    }, [vals, userFilledCount]);
-
     const hasVisuals =
-        vals.riskReward !== "" ||
-        (vals.entryPrice !== "" && vals.slPrice !== "" && vals.targetPrice !== "");
+        calculated &&
+        (vals.riskReward !== "" ||
+            (vals.entryPrice !== "" && vals.slPrice !== "" && vals.targetPrice !== ""));
 
     return (
         <ScrollView style={[styles.container, activeTheme.container]}>
@@ -565,7 +744,7 @@ export default function CalculatorScreen() {
                                 style={[
                                     styles.input,
                                     activeTheme.input,
-                                    missing.includes(key) ? styles.missing : null,
+                                    (errors[key] || missing.includes(key)) ? styles.missing : null,
                                 ]}
                                 keyboardType="numeric"
                                 value={vals[key]}
@@ -579,6 +758,38 @@ export default function CalculatorScreen() {
                         </View>
                     ))}
                 </View>
+
+                {/* ── Calculate Button ── */}
+                <TouchableOpacity
+                    style={[actionStyles.calculateButton, activeTheme.toggle]}
+                    onPress={handleCalculate}
+                    activeOpacity={0.75}
+                >
+                    <Text style={[actionStyles.calculateButtonText, activeTheme.label]}>
+                        🧮 Calculate
+                    </Text>
+                </TouchableOpacity>
+
+                {/* ── Global message (success / error / info) ── */}
+                {globalMessage && (
+                    <View
+                        style={[
+                            styles.missingBox,
+                            globalMessage.type === "error"
+                                ? { backgroundColor: "#ffecec" }
+                                : activeTheme.missingBox,
+                        ]}
+                    >
+                        <Text
+                            style={[
+                                styles.missingItem,
+                                { color: globalMessage.type === "error" ? "#CC0000" : activeTheme.label.color },
+                            ]}
+                        >
+                            {globalMessage.text}
+                        </Text>
+                    </View>
+                )}
 
                 {/* ── Visual Analysis Section ── */}
                 {hasVisuals && (
@@ -609,11 +820,11 @@ export default function CalculatorScreen() {
                     </View>
                 )}
 
-                {/* ── Missing fields warning ── */}
-                {userFilledCount >= 3 && missing.length > 0 && (
+                {/* ── Missing fields warning (after calculation) ── */}
+                {calculated && missing.length > 0 && (
                     <View style={[styles.missingBox, activeTheme.missingBox]}>
                         <Text style={[styles.missingTitle, activeTheme.label]}>
-                            Missing Required Fields:
+                            Could Not Calculate:
                         </Text>
                         {missing.map((m) => (
                             <Text key={m} style={[styles.missingItem, activeTheme.label]}>
@@ -788,6 +999,16 @@ const shareStyles = StyleSheet.create({
 });
 
 const actionStyles = StyleSheet.create({
+    calculateButton: {
+        marginTop: 4,
+        padding: 14,
+        borderRadius: 10,
+        alignItems: "center",
+    },
+    calculateButtonText: {
+        fontSize: 16,
+        fontWeight: "700",
+    },
     copyButton: {
         marginTop: 14,
         padding: 14,
