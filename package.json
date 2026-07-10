@@ -13,6 +13,7 @@
     "build:aab": "eas build --profile production --platform android",
     "build:ios": "eas build --profile production --platform ios",
     "build:web": "npx expo export --platform web",
+    "submit:android": "eas submit --platform android --profile production",
     "deploy": "npx expo export --platform web && eas deploy --prod",
     "deploy:preview": "npx expo export --platform web && eas deploy"
   },
