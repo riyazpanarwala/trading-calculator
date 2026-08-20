@@ -7,8 +7,8 @@ import {
     ScrollView,
     Share,
     Platform,
+    Alert,
 } from "react-native";
-import * as Clipboard from "expo-clipboard";
 import { captureRef } from "react-native-view-shot";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
@@ -249,22 +249,85 @@ function ShareButton({ captureViewRef, vals, theme }) {
     const handleShare = async () => {
         try {
             setSharing(true);
+
+            if (Platform.OS === "web") {
+                const dataUrl = await captureRef(captureViewRef, {
+                    format: "png",
+                    quality: 1,
+                    result: "data-uri",
+                });
+
+                if (!dataUrl) {
+                    throw new Error("Could not capture view screenshot on web.");
+                }
+
+                let shared = false;
+
+                if (typeof navigator !== "undefined" && navigator.share && navigator.canShare) {
+                    try {
+                        const response = await fetch(dataUrl);
+                        const blob = await response.blob();
+                        const file = new File([blob], "trade-setup.png", { type: "image/png" });
+
+                        if (navigator.canShare({ files: [file] })) {
+                            await navigator.share({
+                                title: "Trade Setup",
+                                text: "Check out my trade setup calculation",
+                                files: [file],
+                            });
+                            shared = true;
+                        }
+                    } catch (shareErr) {
+                        if (shareErr.name !== "AbortError") {
+                            console.warn("Web Share API error:", shareErr);
+                        } else {
+                            shared = true; // User cancelled share sheet
+                        }
+                    }
+                }
+
+                if (!shared && typeof document !== "undefined") {
+                    const link = document.createElement("a");
+                    link.href = dataUrl;
+                    link.download = `trade-setup-${Date.now()}.png`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+                return;
+            }
+
             const uri = await captureRef(captureViewRef, {
                 format: "png",
-                quality: 1,
+                quality: 0.95,
                 result: "tmpfile",
             });
 
-            if (Platform.OS === "android") {
+            if (!uri) {
+                throw new Error("Could not generate screenshot file.");
+            }
+
+            const isSharingAvailable = await Sharing.isAvailableAsync();
+            if (isSharingAvailable) {
                 await Sharing.shareAsync(uri, {
                     mimeType: "image/png",
                     dialogTitle: "Share Trade Setup",
+                    UTI: "public.png",
                 });
             } else {
-                await Share.share({ url: uri });
+                await Share.share({
+                    title: "Trade Setup",
+                    url: uri,
+                });
             }
         } catch (e) {
-            console.warn("Share failed:", e);
+            console.error("Share failed:", e);
+            const msg = e && e.message ? e.message : "Failed to capture or share screenshot.";
+            if (Platform.OS === "web") {
+                alert("Share notice: " + msg);
+            } else {
+                Alert.alert("Share Screenshot", msg);
+            }
         } finally {
             setSharing(false);
         }
@@ -283,7 +346,7 @@ function ShareButton({ captureViewRef, vals, theme }) {
             disabled={sharing}
         >
             <Text style={[shareStyles.buttonText, activeTheme.label]}>
-                {sharing ? "⏳ Capturing…" : "📤 Share Setup"}
+                {sharing ? "⏳ Capturing…" : "📤 Share Screenshot"}
             </Text>
         </TouchableOpacity>
     );
@@ -301,7 +364,6 @@ export default function CalculatorScreen() {
     const [calculated, setCalculated] = useState(false);
     const [globalMessage, setGlobalMessage] = useState(null); // { type: 'error'|'info', text: '...' }
     const captureViewRef = useRef(null);
-    const [copyFeedback, setCopyFeedback] = useState(false);
 
     const activeTheme = theme === "light" ? lightTheme : darkTheme;
 
@@ -313,15 +375,6 @@ export default function CalculatorScreen() {
         setGlobalMessage(null);
     }
 
-    async function handleCopy() {
-        const lines = Object.keys(FIELD_LABELS)
-            .filter((k) => vals[k] !== "")
-            .map((k) => `${FIELD_LABELS[k]}: ${vals[k]}`);
-        if (lines.length === 0) return;
-        await Clipboard.setStringAsync(lines.join("\n"));
-        setCopyFeedback(true);
-        setTimeout(() => setCopyFeedback(false), 2000);
-    }
 
     const toNum = (s) => {
         if (s === null || s === undefined || s === "") return null;
@@ -744,7 +797,7 @@ export default function CalculatorScreen() {
 
     return (
         <ScrollView style={[styles.container, activeTheme.container]}>
-            <View ref={captureViewRef} style={activeTheme.container}>
+            <View ref={captureViewRef} collapsable={false} style={activeTheme.container}>
 
                 {/* ── Header ── */}
                 <View style={styles.header}>
@@ -877,20 +930,6 @@ export default function CalculatorScreen() {
                     </Text>
                 </View>
 
-                {userFilledCount > 0 && (
-                    <TouchableOpacity
-                        style={[
-                            actionStyles.copyButton,
-                            copyFeedback ? actionStyles.copyButtonDone : activeTheme.toggle,
-                        ]}
-                        onPress={handleCopy}
-                        activeOpacity={0.75}
-                    >
-                        <Text style={[actionStyles.copyButtonText, activeTheme.label]}>
-                            {copyFeedback ? "✅ Copied!" : "📋 Copy Results"}
-                        </Text>
-                    </TouchableOpacity>
-                )}
 
                 <View style={{ height: 16 }} />
             </View>
@@ -1045,17 +1084,5 @@ const actionStyles = StyleSheet.create({
         fontSize: 16,
         fontWeight: "700",
     },
-    copyButton: {
-        marginTop: 14,
-        padding: 14,
-        borderRadius: 10,
-        alignItems: "center",
-    },
-    copyButtonDone: {
-        backgroundColor: "#34C759",
-    },
-    copyButtonText: {
-        fontSize: 15,
-        fontWeight: "600",
-    },
+
 });
