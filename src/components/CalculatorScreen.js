@@ -251,11 +251,18 @@ function ShareButton({ captureViewRef, vals, theme }) {
             setSharing(true);
 
             if (Platform.OS === "web") {
-                const dataUrl = await captureRef(captureViewRef, {
-                    format: "png",
-                    quality: 1,
-                    result: "data-uri",
+                const domNode = captureViewRef.current;
+                if (!domNode) {
+                    throw new Error("Could not find view element on web.");
+                }
+
+                const html2canvas = require("html2canvas");
+                const canvas = await html2canvas(domNode, {
+                    useCORS: true,
+                    logging: false,
+                    scale: 2,
                 });
+                const dataUrl = canvas.toDataURL("image/png");
 
                 if (!dataUrl) {
                     throw new Error("Could not capture view screenshot on web.");
