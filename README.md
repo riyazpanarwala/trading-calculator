@@ -11,6 +11,9 @@ This calculator automatically derives values such as **SL %, Target %, Quantity,
 
 - 🔄 **Real-time auto-calculation** based on any field input
 - 🔗 **Full bi-directional dependency logic** (SL Price ↔ SL %, Target Price ↔ Target %, Quantity ↔ Position Amount)
+- 💰 **SIP & Lumpsum Calculator** with instant compound interest computation
+- 📊 **SVG Donut Breakdown & Yearly Progression Table** for wealth visualization
+- 🗂️ **Seamless Tab Switching** between Trading and SIP modes (preserving inputs)
 - 🔁 **Reset button** to clear all fields instantly
 - 🚫 **Negative value protection**
 - 🌓 **Built-in Light & Dark Theme**
@@ -22,12 +25,15 @@ This calculator automatically derives values such as **SL %, Target %, Quantity,
 ## 📂 Project Structure
 
 ```
-/App.js                        # Expo entry point
-/src/components/CalculatorScreen.js   # Main calculator logic + UI
-/src/components/styles.js             # Light & dark theme + layout styles
-/index.js                      # Root component registration
-/app.json                      # Expo app config
-/eas.json                      # EAS Build profiles
+/App.js                                 # Expo entry point with top Tab switcher
+/src/components/CalculatorScreen.js    # Trading calculator logic + UI
+/src/components/SipCalculatorScreen.js # SIP & Lumpsum calculator UI
+/src/components/SipDonutChart.js       # SVG Donut investment vs returns chart
+/src/components/styles.js              # Theme tokens & layout stylesheets
+/src/utils/sipCalculations.js          # SIP/Lumpsum financial math & milestones
+/index.js                               # Root component registration
+/app.json                               # Expo app config
+/eas.json                               # EAS Build profiles
 ```
 
 ---

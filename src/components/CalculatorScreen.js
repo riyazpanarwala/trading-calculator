@@ -361,8 +361,10 @@ function ShareButton({ captureViewRef, vals, theme }) {
 
 // ─── Main Calculator ─────────────────────────────────────────────────────────
 
-export default function CalculatorScreen() {
-    const [theme, setTheme] = useState("light");
+export default function CalculatorScreen({ theme: propTheme, setTheme: propSetTheme }) {
+    const [localTheme, setLocalTheme] = useState("light");
+    const theme = propTheme !== undefined ? propTheme : localTheme;
+    const setTheme = propSetTheme !== undefined ? propSetTheme : setLocalTheme;
     const [vals, setVals] = useState(
         Object.keys(FIELD_LABELS).reduce((acc, k) => ({ ...acc, [k]: "" }), {})
     );
