@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, TouchableOpacity, Platform } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import CalculatorScreen from "./src/components/CalculatorScreen";
@@ -12,16 +12,43 @@ export default function App() {
 
   const activeTheme = theme === "light" ? lightTheme : darkTheme;
 
+  // Ensure sleek, modern scrollbar matching the theme on web
+  useEffect(() => {
+    if (Platform.OS === "web" && typeof document !== "undefined") {
+      const styleId = "trading-calc-scrollbar";
+      let styleTag = document.getElementById(styleId);
+      if (!styleTag) {
+        styleTag = document.createElement("style");
+        styleTag.id = styleId;
+        document.head.appendChild(styleTag);
+      }
+      styleTag.innerHTML = `
+        ::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+          background: ${theme === "dark" ? "#090D16" : "#F8FAFC"};
+        }
+        ::-webkit-scrollbar-thumb {
+          background: ${theme === "dark" ? "#334155" : "#CBD5E1"};
+          border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: ${theme === "dark" ? "#475569" : "#94A3B8"};
+        }
+      `;
+    }
+  }, [theme]);
+
   return (
     <SafeAreaProvider edges={["top", "bottom"]}>
       <SafeAreaView style={[{ flex: 1 }, activeTheme.container]}>
         <StatusBar style={theme === "dark" ? "light" : "dark"} />
 
-        {/* ── Centered Container for Responsive Desktop / Mobile Layout ── */}
-        <View style={{ flex: 1, width: "100%", maxWidth: 720, alignSelf: "center" }}>
-          
-          {/* ── Top Navigation Tabs ── */}
-          <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+        {/* ── Top Navigation Tabs (Centered with maxWidth: 720, full-width parent) ── */}
+        <View style={{ width: "100%", paddingHorizontal: 16, paddingTop: 12 }}>
+          <View style={{ width: "100%", maxWidth: 720, alignSelf: "center" }}>
             <View style={[styles.tabBar, activeTheme.tabBarBg, { borderColor: activeTheme.borderColor }]}>
               <TouchableOpacity
                 style={[
@@ -64,14 +91,14 @@ export default function App() {
               </TouchableOpacity>
             </View>
           </View>
+        </View>
 
-          {/* ── Screens (state preserved when switching tabs) ── */}
-          <View style={{ flex: 1, display: activeTab === "trading" ? "flex" : "none" }}>
-            <CalculatorScreen theme={theme} setTheme={setTheme} />
-          </View>
-          <View style={{ flex: 1, display: activeTab === "sip" ? "flex" : "none" }}>
-            <SipCalculatorScreen theme={theme} setTheme={setTheme} />
-          </View>
+        {/* ── Screens: FULL WIDTH (width: '100%') so ScrollView spans to browser window edges ── */}
+        <View style={{ flex: 1, width: "100%", display: activeTab === "trading" ? "flex" : "none" }}>
+          <CalculatorScreen theme={theme} setTheme={setTheme} />
+        </View>
+        <View style={{ flex: 1, width: "100%", display: activeTab === "sip" ? "flex" : "none" }}>
+          <SipCalculatorScreen theme={theme} setTheme={setTheme} />
         </View>
       </SafeAreaView>
     </SafeAreaProvider>
