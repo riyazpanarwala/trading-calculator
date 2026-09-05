@@ -1,309 +1,169 @@
-# 📈 Universal Trading Calculator (Expo / React Native)
+# 📈 Universal Trading & Wealth Calculator (Expo / React Native)
 
-A powerful and flexible **trading calculator** built using **React Native + Expo**.
-This calculator automatically derives values such as **SL %, Target %, Quantity, Position Size, Risk Amount, Risk–Reward, Profit**, and more — all interconnected and updated in real time.
+A powerful, high-precision **Trading Risk & Wealth Compounding Calculator** built with **React Native + Expo**. Designed with institutional-grade fintech aesthetics, responsive desktop/mobile layouts, and real-time bi-directional derivations.
 
-🌐 **Live Web App:** https://riyaz-trading-calc.expo.app/
+🌐 **Live Web App:** [https://riyaz-trading-calc.expo.app/](https://riyaz-trading-calc.expo.app/)
 
 ---
 
-## 🚀 Features
+## 🚀 Key Features
 
-- 🔄 **Real-time auto-calculation** based on any field input
-- 🔗 **Full bi-directional dependency logic** (SL Price ↔ SL %, Target Price ↔ Target %, Quantity ↔ Position Amount)
-- 💰 **SIP & Lumpsum Calculator** with instant compound interest computation
-- 📊 **SVG Donut Breakdown & Yearly Progression Table** for wealth visualization
-- 🗂️ **Seamless Tab Switching** between Trading and SIP modes (preserving inputs)
-- 🔁 **Reset button** to clear all fields instantly
-- 🚫 **Negative value protection**
-- 🌓 **Built-in Light & Dark Theme**
-- 📱 **Responsive 2-column grid layout**
-- ⚠️ **Missing field highlights** with dynamic validation
+### 1. 📈 Universal Trading Calculator
+- 🔄 **10-Variable Bi-Directional Derivation**: Enter any 2–3 parameters to automatically derive the rest:
+  - `Entry Price`, `Stop Loss Price`, `SL %`
+  - `Target Price`, `Target %`, `Risk : Reward (R:R)`
+  - `Quantity`, `Position Amount`, `Risk Amount (Max Loss)`, `Profit Amount`
+- 🎯 **Trade Quality Scorecard**: Live trade grading (`Poor ⚠️`, `Acceptable 🔶`, `Good ✅`, `Excellent 🚀`) based on risk-to-reward ratio.
+- 📊 **Visual R:R Distribution Bar**: Real-time visual comparison of risk outlay vs. projected reward with localized currency amounts.
+- 🪜 **Interactive Price Ladder Chart**: SVG-rendered price action ladder illustrating Target, Entry, and Stop Loss thresholds with distance percentages.
+- 📤 **Screenshot Sharing & Export**: Instant high-resolution screenshot export for trade setups on Web (Web Share / direct download), iOS, and Android.
+
+### 2. 💰 SIP & Lumpsum Wealth Calculator
+- 📅 **Dual Compounding Modes**: Seamlessly switch between **Monthly SIP** and **One-Time Lumpsum** investment models.
+- ⚡ **Quick-Select Horizon Chips**: One-tap duration selection (`1Y`, `3Y`, `5Y`, `10Y`, `15Y`, `20Y`, `25Y`, `30Y`).
+- 🍩 **SVG Donut Asset Breakdown**: Dynamic dual-arc visual breakdown showing Principal Invested vs. Compounded Wealth with compact currency notations (`₹ L / Cr`).
+- 📈 **Yearly Growth Progression Ledger**: Milestone table displaying yearly growth, invested capital, returns, and total future value.
+- 📤 **SIP Plan Sharing**: One-click sharing and export for investment plans.
+
+### 3. 🎨 Premium Fintech UI & Responsive Layout
+- 📱 **Universal Responsiveness**: Adaptive centered container (`maxWidth: 720px`) on desktop web displays with native full-window body scrolling (no nested inner scrollbars).
+- 🌓 **Obsidian Dark & Clean Slate Light Themes**: Deep `#090D16` dark mode and `#F8FAFC` light mode with translucent borders and elevated cards.
+- 🔒 **Data Validation & Protection**: Negative value checks, SL/Target bounds checking, and missing required field highlights.
+- 🗂️ **State-Preserving Tab Bar**: Switch between Trading and Wealth calculators without losing any entered values.
 
 ---
 
 ## 📂 Project Structure
 
 ```
-/App.js                                 # Expo entry point with top Tab switcher
-/src/components/CalculatorScreen.js    # Trading calculator logic + UI
-/src/components/SipCalculatorScreen.js # SIP & Lumpsum calculator UI
-/src/components/SipDonutChart.js       # SVG Donut investment vs returns chart
-/src/components/styles.js              # Theme tokens & layout stylesheets
-/src/utils/sipCalculations.js          # SIP/Lumpsum financial math & milestones
-/index.js                               # Root component registration
-/app.json                               # Expo app config
-/eas.json                               # EAS Build profiles
+├── App.js                                 # Main shell, responsive container, top tab navigation
+├── src/
+│   ├── components/
+│   │   ├── CalculatorScreen.js            # Trading workstation (10-field engine, badge, ladder)
+│   │   ├── SipCalculatorScreen.js         # SIP & Lumpsum calculator, metrics, milestones table
+│   │   ├── SipDonutChart.js               # SVG Donut investment vs. returns chart
+│   │   └── styles.js                      # Design system tokens (dark/light themes, cards, grid)
+│   └── utils/
+│       └── sipCalculations.js             # Financial compounding algorithms & formatters
+├── app.json                               # Expo app configuration
+├── eas.json                               # EAS Build & Hosting configuration
+└── package.json                           # Dependencies & scripts
 ```
 
 ---
 
 ## 🛠 Prerequisites
 
-Before running or deploying, make sure you have the following installed:
+Make sure you have the following installed:
 
-| Tool | Version | Install |
-|------|---------|---------|
-| Node.js | 18+ | https://nodejs.org |
-| npm or yarn | latest | comes with Node |
-| Expo CLI | latest | `npm install -g expo-cli` |
-| EAS CLI | latest | `npm install -g eas-cli` |
+| Tool | Version | Install Link |
+|------|---------|-------------|
+| **Node.js** | 18+ | [https://nodejs.org](https://nodejs.org) |
+| **npm** / **yarn** | latest | Bundled with Node |
+| **Expo CLI** | latest | `npm install -g expo-cli` |
+| **EAS CLI** | latest | `npm install -g eas-cli` |
 
 ---
 
 ## ▶️ Local Development Setup
 
 ### 1. Install dependencies
-
 ```bash
 npm install
 ```
 
-### 2. Start the dev server
-
+### 2. Start dev server
 ```bash
-npx expo start
+npm start
 ```
-
-This opens the **Expo Dev Tools** in your browser. From there you can:
-- Press `w` → open in **Web browser**
-- Press `a` → open in **Android emulator** (requires Android Studio)
-- Press `i` → open in **iOS simulator** (requires Xcode, macOS only)
-- Scan the **QR code** with the **Expo Go** app on your phone
+From the Expo interactive CLI:
+- Press `w` → Open in **Web browser**
+- Press `a` → Open in **Android emulator**
+- Press `i` → Open in **iOS simulator** (macOS only)
+- Scan the **QR code** with the **Expo Go** app on your mobile device
 
 ---
 
-## 🌐 Deploy — Expo Web (via EAS Hosting)
+## 🌐 Deploy — Web (Expo Hosting via EAS)
 
-This project deploys to **Expo's own hosting** using EAS Deploy.
+The project is configured for automated builds and deployment via **EAS Hosting**:
 
-### Step 1: Install / update EAS CLI
-
+### One-Command Deployment:
 ```bash
-npm install -g eas-cli
+npm run deploy
 ```
+*(Runs `npx expo export --platform web && eas deploy --prod`)*
 
-### Step 2: Login to your Expo account
-
-```bash
-eas login
-```
-
-### Step 3: Build the web bundle
-
-```bash
-npx expo export --platform web
-```
-
-This generates the production-ready static files in the `dist/` folder.
-
-### Step 4: Deploy to Expo Hosting
-
-```bash
-eas deploy --prod
-```
-
-EAS uploads the `dist/` folder and gives you a live **`.expo.app` URL** (e.g. `https://trading-calc-xxxx.expo.app`).
-
-That's it — your app is live! 🎉
+### Manual Step-by-Step:
+1. **Export production web assets:**
+   ```bash
+   npm run build:web
+   ```
+2. **Deploy to production:**
+   ```bash
+   eas deploy --prod
+   ```
+3. **Deploy preview branch (optional):**
+   ```bash
+   npm run deploy:preview
+   ```
 
 ---
 
-### Re-deploying after changes
+## 🤖 Standalone Mobile Builds (Android & iOS)
 
-Every time you make code changes, just run both commands again:
-
+### Android Builds:
 ```bash
-npx expo export --platform web
-eas deploy --prod
-```
-
-### Preview deployments (optional)
-
-To deploy a non-production preview (e.g. for testing before going live):
-
-```bash
-npx expo export --platform web
-eas deploy
-```
-
-This creates a temporary preview URL without affecting the production deployment.
-
-### View all deployments
-
-```bash
-eas deploy:list
-```
-
-Or visit your project dashboard at https://expo.dev to see all deployments, URLs, and history.
-
-### Run locally in browser (development only)
-
-```bash
-npx expo start --web
-```
-
----
-
-## 🤖 Deploy — Android
-
-There are two paths: **Expo Go (quick preview)** or **EAS Build (production APK/AAB)**.
-
-### Path 1: Quick preview via Expo Go
-
-1. Install **Expo Go** from the [Google Play Store](https://play.google.com/store/apps/details?id=host.exp.exponent)
-2. Run `npx expo start`
-3. Scan the QR code in the terminal with the Expo Go app
-
-### Path 2: Build a standalone APK (for testing / sharing directly)
-
-```bash
-# Login to your Expo account first
-eas login
-
-# Build an APK
+# Standalone APK for direct download/testing
 npm run build:apk
-# or directly:
-eas build --profile apk --platform android
+
+# Production AAB for Google Play Store
+npm run build:aab
+
+# Submit to Google Play Store
+npm run submit:android
 ```
 
-Once the build is done, EAS provides a **download link** for the `.apk` file. Share it or install it directly on any Android device.
-
-### Path 3: Build a release AAB (for Google Play Store)
-
+### iOS Builds:
 ```bash
-eas build --profile production --platform android
-```
-
-This produces a `.aab` (Android App Bundle) — the format required by the Play Store.
-
-**Submit to Google Play Store:**
-```bash
-eas submit --platform android
-```
-
-> ⚠️ You need a [Google Play Developer account](https://play.google.com/console) ($25 one-time fee) and must configure `eas.json` with your service account credentials.
-
-### Android Build Profiles (from `eas.json`)
-
-| Profile | Command | Output | Use Case |
-|---------|---------|--------|----------|
-| `apk` | `npm run build:apk` | `.apk` | Direct install / testing |
-| `preview` | `npm run build:preview` | `.apk` | Internal testing |
-| `production` | `npm run build:aab` | `.aab` | Google Play Store |
-
----
-
-## 🍎 Deploy — iOS
-
-> ⚠️ iOS builds require a **Mac with Xcode** for local builds, or you can use **EAS cloud builds** from any OS. An **Apple Developer account** ($99/year) is required for real device testing and App Store submission.
-
-### Path 1: Quick preview via Expo Go
-
-1. Install **Expo Go** from the [App Store](https://apps.apple.com/app/expo-go/id982107779)
-2. Run `npx expo start`
-3. Scan the QR code with your iPhone Camera app
-
-### Path 2: Run on iOS Simulator (macOS only)
-
-```bash
-npx expo start --ios
-# or press 'i' after running npx expo start
-```
-
-Requires **Xcode** installed from the Mac App Store.
-
-### Path 3: Build for TestFlight / App Store via EAS
-
-```bash
-# Login to Expo and Apple accounts
-eas login
-eas credentials   # set up your Apple credentials
-
-# Build for iOS
-eas build --profile production --platform ios
-```
-
-EAS will prompt you to log in with your **Apple ID** and handle provisioning profiles automatically.
-
-**Submit to App Store:**
-```bash
-eas submit --platform ios
-```
-
-This uploads the build to **App Store Connect**. From there:
-1. Log into [App Store Connect](https://appstoreconnect.apple.com)
-2. Go to your app → **TestFlight** to share with testers
-3. Go to **App Store** → submit for Apple review when ready
-
----
-
-## 🔐 Environment & Credentials Setup
-
-### EAS Project Link
-
-Make sure your `app.json` has the correct project ID:
-
-```json
-"extra": {
-  "eas": {
-    "projectId": "8a034061-cf97-46fe-ac18-18463127a599"
-  }
-}
-```
-
-### First-time EAS setup
-
-```bash
-npm install -g eas-cli
-eas login
-eas build:configure   # creates/updates eas.json
+# Production IPA for TestFlight / App Store
+npm run build:ios
 ```
 
 ---
 
-## 📜 Available Scripts
+## 🧩 Form Field Reference (Trading Calculator)
+
+| Field Key | Label | Description |
+|-----------|-------|-------------|
+| `entryPrice` | **Entry Price** | Base asset purchase/entry level |
+| `slPrice` | **SL Price** | Absolute Stop Loss trigger price |
+| `slPercent` | **SL %** | Percentage distance from Entry to Stop Loss |
+| `riskAmount` | **Risk Amount** | Total capital risked on the trade (`₹`) |
+| `positionAmount`| **Position Amount** | Total capital allocated for the position |
+| `quantity` | **Quantity** | Number of shares / units (integer floored) |
+| `targetPrice` | **Target Price** | Take-profit exit target price |
+| `targetPercent`| **Target %** | Percentage gain from Entry to Target |
+| `riskReward` | **Risk : Reward** | Normalized reward/risk ratio (e.g. `2` or `1:2.5`) |
+| `profitAmount` | **Profit Amount** | Net expected monetary profit upon target hit |
+
+---
+
+## 📜 Available NPM Scripts
 
 | Script | Command | Description |
 |--------|---------|-------------|
-| Start dev server | `npm start` | Opens Expo Dev Tools |
-| Web | `npm run web` | Start on web |
-| Android | `npm run android` | Start on Android emulator |
-| iOS | `npm run ios` | Start on iOS simulator |
-| Build APK | `npm run build:apk` | EAS cloud APK build |
-| Build Preview | `npm run build:preview` | EAS internal preview APK |
-| Build AAB | `npm run build:aab` | EAS production AAB for Play Store |
-| Build iOS | `npm run build:ios` | EAS production iOS build |
+| `npm start` | `expo start` | Starts Expo dev server |
+| `npm run web` | `expo start --web` | Starts local web development server |
+| `npm run build:web` | `npx expo export --platform web` | Bundles static web files into `dist/` |
+| `npm run deploy` | `npx expo export --platform web && eas deploy --prod` | Full production build and EAS deployment |
+| `npm run deploy:preview`| `npx expo export --platform web && eas deploy` | Staging preview deployment |
+| `npm run build:apk` | `eas build --profile apk --platform android` | Standalone Android APK build |
+| `npm run build:aab` | `eas build --profile production --platform android` | Google Play Store AAB build |
+| `npm run build:ios` | `eas build --profile production --platform ios` | App Store iOS production build |
 
 ---
 
-## 🧩 Available Form Fields
+## 📄 License
 
-| Field Key | Label |
-|-----------|-------|
-| entryPrice | Entry Price |
-| slPrice | SL Price |
-| slPercent | SL % |
-| riskAmount | Risk Amount |
-| positionAmount | Position Amount |
-| quantity | Quantity |
-| targetPercent | Target % |
-| targetPrice | Target Price |
-| riskReward | Risk : Reward |
-| profitAmount | Profit Amount |
-
----
-
-## 🧪 Usage Instructions
-
-1. Enter any values among Entry Price, SL Price / SL %, Target Price / %, Quantity / Position Amount, or Risk Amount
-2. The remaining fields **auto-fill instantly**
-3. Tap **↺ Reset** to clear all fields and start fresh
-4. If too few fields are filled, missing required fields are highlighted in orange
-5. Toggle between **Light / Dark** theme using the button in the header
-
----
-
-## 📜 License
-
-This project is free to use, modify, or integrate into your personal or commercial trading applications.
+This project is licensed under the MIT License — free for personal and commercial trading applications.
