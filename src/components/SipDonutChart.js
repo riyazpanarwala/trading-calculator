@@ -18,21 +18,21 @@ export default function SipDonutChart({ totalInvested, estimatedReturns, maturit
 
     // SVG Geometry
     const size = 160;
-    const strokeWidth = 18;
-    const radius = (size - strokeWidth) / 2; // (160 - 18) / 2 = 71
+    const strokeWidth = 16;
+    const radius = (size - strokeWidth) / 2; // (160 - 16) / 2 = 72
     const center = size / 2;
     const circumference = 2 * Math.PI * radius;
 
     const investedLength = hasData ? (investedPct / 100) * circumference : 0;
     const returnsLength = hasData ? (returnsPct / 100) * circumference : 0;
 
-    const investedColor = activeTheme.investedColor || "#007AFF";
-    const returnsColor = activeTheme.returnsColor || "#34C759";
-    const baseCircleColor = theme === "light" ? "#E5E5EA" : "#2C2C2E";
+    const investedColor = activeTheme.investedColor || "#2563EB";
+    const returnsColor = activeTheme.returnsColor || "#10B981";
+    const baseCircleColor = theme === "light" ? "#E2E8F0" : "#1E293B";
 
     return (
-        <View style={[chartStyles.card, activeTheme.card]}>
-            <Text style={[chartStyles.title, activeTheme.label]}>
+        <View style={[chartStyles.card, activeTheme.card, { borderColor: activeTheme.borderColor }]}>
+            <Text style={[chartStyles.title, activeTheme.title]}>
                 📊 Investment Breakdown
             </Text>
 
@@ -84,7 +84,7 @@ export default function SipDonutChart({ totalInvested, estimatedReturns, maturit
                         {/* Center Value */}
                         <SvgText
                             x={center}
-                            y={center - 4}
+                            y={center - 3}
                             textAnchor="middle"
                             fontSize={15}
                             fontWeight="800"
@@ -138,14 +138,16 @@ export default function SipDonutChart({ totalInvested, estimatedReturns, maturit
 
 const chartStyles = StyleSheet.create({
     card: {
-        borderRadius: 12,
+        borderRadius: 14,
+        borderWidth: 1,
         padding: 16,
         marginBottom: 16,
     },
     title: {
-        fontSize: 15,
+        fontSize: 14,
         fontWeight: "700",
         marginBottom: 14,
+        letterSpacing: -0.2,
     },
     contentRow: {
         flexDirection: "row",
@@ -170,9 +172,9 @@ const chartStyles = StyleSheet.create({
         gap: 10,
     },
     indicator: {
-        width: 12,
-        height: 12,
-        borderRadius: 6,
+        width: 10,
+        height: 10,
+        borderRadius: 5,
         marginTop: 4,
     },
     legendTextCol: {

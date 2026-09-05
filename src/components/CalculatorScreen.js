@@ -54,8 +54,8 @@ function TradeQualityBadge({ riskReward, theme }) {
     if (!quality) return null;
 
     return (
-        <View style={[badgeStyles.container, activeTheme.card]}>
-            <Text style={[badgeStyles.heading, activeTheme.label]}>Trade Quality</Text>
+        <View style={[badgeStyles.container, activeTheme.card, { borderColor: activeTheme.borderColor }]}>
+            <Text style={[badgeStyles.heading, activeTheme.subtext]}>Trade Quality</Text>
             <View style={[badgeStyles.badge, { backgroundColor: quality.bg }]}>
                 <Text style={badgeStyles.badgeEmoji}>{quality.emoji}</Text>
                 <Text style={[badgeStyles.badgeLabel, { color: quality.text }]}>
@@ -85,8 +85,8 @@ function RRBar({ riskReward, riskAmount, profitAmount, theme }) {
     const profitAmt = parseFloat(profitAmount);
 
     return (
-        <View style={[rrBarStyles.container, activeTheme.card]}>
-            <Text style={[rrBarStyles.heading, activeTheme.label]}>Risk / Reward</Text>
+        <View style={[rrBarStyles.container, activeTheme.card, { borderColor: activeTheme.borderColor }]}>
+            <Text style={[rrBarStyles.heading, activeTheme.subtext]}>Risk / Reward</Text>
 
             <View style={rrBarStyles.barRow}>
                 <View style={[rrBarStyles.riskSegment, { flex: riskPct }]}>
@@ -146,12 +146,12 @@ function PriceLadder({ entryPrice, slPrice, targetPrice, theme }) {
     const yTarget = toY(target);
 
     const isDark = theme === "dark";
-    const axisColor    = isDark ? "#555"    : "#CCC";
-    const entryColor   = "#007AFF";
-    const slColor      = "#FF3B30";
-    const targetColor  = "#34C759";
-    const labelColor   = isDark ? "#FFF"    : "#1C1C1E";
-    const sublabelColor = isDark ? "#AAA"   : "#888";
+    const axisColor    = isDark ? "#334155" : "#CBD5E1";
+    const entryColor   = "#3B82F6";
+    const slColor      = "#EF4444";
+    const targetColor  = "#10B981";
+    const labelColor   = isDark ? "#F8FAFC" : "#0F172A";
+    const sublabelColor = isDark ? "#94A3B8" : "#64748B";
 
     const priceFmt = (p) =>
         p >= 10000
@@ -159,8 +159,8 @@ function PriceLadder({ entryPrice, slPrice, targetPrice, theme }) {
             : p.toLocaleString("en-IN", { maximumFractionDigits: 2 });
 
     return (
-        <View style={[ladderStyles.container, activeTheme.card]}>
-            <Text style={[ladderStyles.heading, activeTheme.label]}>Price Ladder</Text>
+        <View style={[ladderStyles.container, activeTheme.card, { borderColor: activeTheme.borderColor }]}>
+            <Text style={[ladderStyles.heading, activeTheme.subtext]}>Price Ladder</Text>
 
             <Svg width={W} height={H}>
                 <Line x1={lineX} y1={topPad} x2={lineX} y2={H - bottomPad}
@@ -805,94 +805,121 @@ export default function CalculatorScreen({ theme: propTheme, setTheme: propSetTh
             (vals.entryPrice !== "" && vals.slPrice !== "" && vals.targetPrice !== ""));
 
     return (
-        <ScrollView style={[styles.container, activeTheme.container]}>
-            <View ref={captureViewRef} collapsable={false} style={activeTheme.container}>
+        <ScrollView style={[styles.container, activeTheme.container]} contentContainerStyle={styles.contentWrapper}>
+            <View ref={captureViewRef} collapsable={false}>
 
-                {/* ── Header ── */}
-                <View style={styles.header}>
-                    <Text style={[styles.title, activeTheme.title]}>
-                        Universal Trading Calc
-                    </Text>
-                    <View style={styles.headerButtons}>
-                        <TouchableOpacity
-                            style={[styles.themeToggle, activeTheme.toggle]}
-                            onPress={handleReset}
-                        >
-                            <Text style={{ color: activeTheme.title.color }}>🗑 Reset</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.themeToggle, activeTheme.toggle]}
-                            onPress={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
-                        >
-                            <Text style={{ color: activeTheme.title.color }}>
-                                {theme === "light" ? "🌙 Dark" : "☀️ Light"}
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-
-                {/* ── Input Grid ── */}
-                <View style={styles.grid}>
-                    {Object.keys(FIELD_LABELS).map((key) => (
-                        <View key={key} style={styles.col}>
-                            <Text style={[styles.label, activeTheme.label]}>
-                                {FIELD_LABELS[key]}
-                            </Text>
-                            <TextInput
-                                style={[
-                                    styles.input,
-                                    activeTheme.input,
-                                    (errors[key] || missing.includes(key)) ? styles.missing : null,
-                                ]}
-                                keyboardType={key === "riskReward" ? "default" : "numeric"}
-                                value={vals[key]}
-                                placeholder={key === "riskReward" ? "e.g. 2 or 1:2" : FIELD_LABELS[key]}
-                                placeholderTextColor={activeTheme.placeholder.color}
-                                onChangeText={(t) => setInput(key, t)}
-                            />
-                            {errors[key] && (
-                                <Text style={styles.error}>{errors[key]}</Text>
-                            )}
+                {/* ── Main Input Card ── */}
+                <View style={[styles.cardWrapper, activeTheme.card]}>
+                    {/* ── Header ── */}
+                    <View style={styles.header}>
+                        <Text style={[styles.title, activeTheme.title]}>
+                            Universal Trading Calc
+                        </Text>
+                        <View style={styles.headerButtons}>
+                            <TouchableOpacity
+                                style={[styles.themeToggle, activeTheme.toggle]}
+                                onPress={handleReset}
+                                activeOpacity={0.7}
+                            >
+                                <Text style={[styles.themeToggleText, { color: activeTheme.title.color }]}>🗑 Reset</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.themeToggle, activeTheme.toggle]}
+                                onPress={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
+                                activeOpacity={0.7}
+                            >
+                                <Text style={[styles.themeToggleText, { color: activeTheme.title.color }]}>
+                                    {theme === "light" ? "🌙 Dark" : "☀️ Light"}
+                                </Text>
+                            </TouchableOpacity>
                         </View>
-                    ))}
-                </View>
+                    </View>
 
-                {/* ── Calculate Button ── */}
-                <TouchableOpacity
-                    style={[actionStyles.calculateButton, activeTheme.toggle]}
-                    onPress={handleCalculate}
-                    activeOpacity={0.75}
-                >
-                    <Text style={[actionStyles.calculateButtonText, activeTheme.label]}>
-                        🧮 Calculate
-                    </Text>
-                </TouchableOpacity>
+                    {/* ── Input Grid ── */}
+                    <View style={styles.grid}>
+                        {Object.keys(FIELD_LABELS).map((key) => (
+                            <View key={key} style={styles.col}>
+                                <Text style={[styles.label, activeTheme.label]}>
+                                    {FIELD_LABELS[key]}
+                                </Text>
+                                <TextInput
+                                    style={[
+                                        styles.input,
+                                        activeTheme.input,
+                                        { borderColor: activeTheme.borderColor },
+                                        (errors[key] || missing.includes(key)) ? styles.missing : null,
+                                    ]}
+                                    keyboardType={key === "riskReward" ? "default" : "numeric"}
+                                    value={vals[key]}
+                                    placeholder={key === "riskReward" ? "e.g. 2 or 1:2" : FIELD_LABELS[key]}
+                                    placeholderTextColor={activeTheme.placeholder.color}
+                                    onChangeText={(t) => setInput(key, t)}
+                                />
+                                {errors[key] && (
+                                    <Text style={styles.error}>{errors[key]}</Text>
+                                )}
+                            </View>
+                        ))}
+                    </View>
 
-                {/* ── Global message (success / error / info) ── */}
-                {globalMessage && (
-                    <View
-                        style={[
-                            styles.missingBox,
-                            globalMessage.type === "error"
-                                ? { backgroundColor: "#ffecec" }
-                                : activeTheme.missingBox,
-                        ]}
+                    {/* ── Calculate Button ── */}
+                    <TouchableOpacity
+                        style={[actionStyles.calculateButton, activeTheme.tabActive]}
+                        onPress={handleCalculate}
+                        activeOpacity={0.8}
                     >
-                        <Text
+                        <Text style={[actionStyles.calculateButtonText, activeTheme.tabActiveText]}>
+                            🧮 Calculate
+                        </Text>
+                    </TouchableOpacity>
+
+                    {/* ── Global message (success / error / info) ── */}
+                    {globalMessage && (
+                        <View
                             style={[
-                                styles.missingItem,
-                                { color: globalMessage.type === "error" ? "#CC0000" : activeTheme.label.color },
+                                styles.missingBox,
+                                globalMessage.type === "error"
+                                    ? { backgroundColor: theme === "light" ? "#FEF2F2" : "#2A0E12", borderColor: theme === "light" ? "#FECACA" : "#7F1D1D" }
+                                    : activeTheme.missingBox,
                             ]}
                         >
-                            {globalMessage.text}
+                            <Text
+                                style={[
+                                    styles.missingItem,
+                                    { color: globalMessage.type === "error" ? "#EF4444" : activeTheme.label.color },
+                                ]}
+                            >
+                                {globalMessage.text}
+                            </Text>
+                        </View>
+                    )}
+
+                    {/* ── Missing fields warning (after calculation) ── */}
+                    {calculated && missing.length > 0 && (
+                        <View style={[styles.missingBox, activeTheme.missingBox]}>
+                            <Text style={[styles.missingTitle, activeTheme.label]}>
+                                Could Not Calculate:
+                            </Text>
+                            {missing.map((m) => (
+                                <Text key={m} style={[styles.missingItem, activeTheme.label]}>
+                                    • {FIELD_LABELS[m]}
+                                </Text>
+                            ))}
+                        </View>
+                    )}
+
+                    <View style={styles.summary}>
+                        <Text style={[styles.summaryLabel, activeTheme.subtext]}>Provided</Text>
+                        <Text style={[styles.summaryValue, activeTheme.title]}>
+                            {userFilledCount} / {Object.keys(FIELD_LABELS).length}
                         </Text>
                     </View>
-                )}
+                </View>
 
                 {/* ── Visual Analysis Section ── */}
                 {hasVisuals && (
-                    <View style={visualStyles.section}>
-                        <Text style={[visualStyles.sectionTitle, activeTheme.label]}>
+                    <View style={[styles.cardWrapper, activeTheme.card, { marginTop: 4 }]}>
+                        <Text style={[visualStyles.sectionTitle, activeTheme.title]}>
                             📊 Analysis
                         </Text>
 
@@ -915,41 +942,17 @@ export default function CalculatorScreen({ theme: propTheme, setTheme: propSetTh
                             targetPrice={vals.targetPrice}
                             theme={theme}
                         />
+
+                        <ShareButton
+                            captureViewRef={captureViewRef}
+                            vals={vals}
+                            theme={theme}
+                        />
                     </View>
                 )}
 
-                {/* ── Missing fields warning (after calculation) ── */}
-                {calculated && missing.length > 0 && (
-                    <View style={[styles.missingBox, activeTheme.missingBox]}>
-                        <Text style={[styles.missingTitle, activeTheme.label]}>
-                            Could Not Calculate:
-                        </Text>
-                        {missing.map((m) => (
-                            <Text key={m} style={[styles.missingItem, activeTheme.label]}>
-                                • {FIELD_LABELS[m]}
-                            </Text>
-                        ))}
-                    </View>
-                )}
-
-                <View style={styles.summary}>
-                    <Text style={[styles.summaryLabel, activeTheme.label]}>Provided</Text>
-                    <Text style={[styles.summaryValue, activeTheme.label]}>
-                        {userFilledCount} / {Object.keys(FIELD_LABELS).length}
-                    </Text>
-                </View>
-
-
-                <View style={{ height: 16 }} />
             </View>
-
-            <ShareButton
-                captureViewRef={captureViewRef}
-                vals={vals}
-                theme={theme}
-            />
-
-            <View style={{ height: 50 }} />
+            <View style={{ height: 30 }} />
         </ScrollView>
     );
 }
@@ -961,106 +964,105 @@ import { StyleSheet } from "react-native";
 const badgeStyles = StyleSheet.create({
     container: {
         flex: 1,
-        borderRadius: 12,
+        borderRadius: 14,
+        borderWidth: 1,
         padding: 14,
         alignItems: "center",
         justifyContent: "center",
         minHeight: 110,
     },
     heading: {
-        fontSize: 12,
-        fontWeight: "600",
+        fontSize: 11,
+        fontWeight: "700",
         marginBottom: 8,
         textTransform: "uppercase",
         letterSpacing: 0.5,
-        opacity: 0.6,
     },
     badge: {
         flexDirection: "row",
         alignItems: "center",
         gap: 6,
         paddingHorizontal: 14,
-        paddingVertical: 8,
+        paddingVertical: 6,
         borderRadius: 20,
         marginBottom: 8,
     },
-    badgeEmoji: { fontSize: 16 },
-    badgeLabel: { fontSize: 15, fontWeight: "700" },
-    rrText: { fontSize: 13, opacity: 0.7 },
+    badgeEmoji: { fontSize: 14 },
+    badgeLabel: { fontSize: 14, fontWeight: "700" },
+    rrText: { fontSize: 12, fontWeight: "600" },
 });
 
 const rrBarStyles = StyleSheet.create({
     container: {
         flex: 2,
-        borderRadius: 12,
+        borderRadius: 14,
+        borderWidth: 1,
         padding: 14,
         minHeight: 110,
         justifyContent: "center",
     },
     heading: {
-        fontSize: 12,
-        fontWeight: "600",
+        fontSize: 11,
+        fontWeight: "700",
         marginBottom: 10,
         textTransform: "uppercase",
         letterSpacing: 0.5,
-        opacity: 0.6,
     },
     barRow: {
         flexDirection: "row",
-        height: 36,
+        height: 34,
         borderRadius: 8,
         overflow: "hidden",
     },
     riskSegment: {
-        backgroundColor: "#FF3B30",
+        backgroundColor: "#EF4444",
         alignItems: "center",
         justifyContent: "center",
         minWidth: 32,
     },
     rewardSegment: {
-        backgroundColor: "#34C759",
+        backgroundColor: "#10B981",
         alignItems: "center",
         justifyContent: "center",
         minWidth: 32,
     },
-    segLabel: { fontSize: 9, color: "#fff", fontWeight: "600", opacity: 0.85 },
+    segLabel: { fontSize: 9, color: "#fff", fontWeight: "700", opacity: 0.85, textTransform: "uppercase" },
     segValue: { fontSize: 12, color: "#fff", fontWeight: "700" },
     amountsRow: {
         flexDirection: "row",
         justifyContent: "space-between",
-        marginTop: 6,
+        marginTop: 8,
     },
-    riskAmtText: { fontSize: 12, color: "#FF3B30", fontWeight: "600" },
-    profitAmtText: { fontSize: 12, color: "#34C759", fontWeight: "600" },
+    riskAmtText: { fontSize: 12, color: "#EF4444", fontWeight: "700" },
+    profitAmtText: { fontSize: 12, color: "#10B981", fontWeight: "700" },
 });
 
 const ladderStyles = StyleSheet.create({
     container: {
-        borderRadius: 12,
-        padding: 14,
-        marginTop: 12,
+        borderRadius: 14,
+        borderWidth: 1,
+        padding: 16,
+        marginTop: 14,
         alignItems: "center",
     },
     heading: {
-        fontSize: 12,
-        fontWeight: "600",
-        marginBottom: 6,
+        fontSize: 11,
+        fontWeight: "700",
+        marginBottom: 8,
         textTransform: "uppercase",
         letterSpacing: 0.5,
-        opacity: 0.6,
         alignSelf: "flex-start",
     },
 });
 
 const visualStyles = StyleSheet.create({
     section: {
-        marginTop: 24,
-        paddingHorizontal: 2,
+        marginTop: 14,
     },
     sectionTitle: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: "700",
-        marginBottom: 12,
+        marginBottom: 14,
     },
     row: {
         flexDirection: "row",
@@ -1070,28 +1072,30 @@ const visualStyles = StyleSheet.create({
 
 const shareStyles = StyleSheet.create({
     button: {
-        margin: 16,
-        marginTop: 4,
-        padding: 14,
-        borderRadius: 10,
+        marginTop: 14,
+        paddingVertical: 12,
+        borderRadius: 12,
+        borderWidth: 1,
         alignItems: "center",
+        justifyContent: "center",
     },
     buttonText: {
-        fontSize: 15,
-        fontWeight: "600",
+        fontSize: 14,
+        fontWeight: "700",
     },
 });
 
 const actionStyles = StyleSheet.create({
     calculateButton: {
-        marginTop: 4,
-        padding: 14,
-        borderRadius: 10,
+        marginTop: 8,
+        paddingVertical: 13,
+        borderRadius: 12,
         alignItems: "center",
+        justifyContent: "center",
     },
     calculateButtonText: {
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: "700",
+        letterSpacing: -0.2,
     },
-
 });

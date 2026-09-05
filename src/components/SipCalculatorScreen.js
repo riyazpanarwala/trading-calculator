@@ -132,146 +132,155 @@ export default function SipCalculatorScreen({ theme = "dark", setTheme }) {
     };
 
     return (
-        <ScrollView style={[styles.container, activeTheme.container]}>
-            <View ref={captureViewRef} collapsable={false} style={activeTheme.container}>
+        <ScrollView style={[styles.container, activeTheme.container]} contentContainerStyle={styles.contentWrapper}>
+            <View ref={captureViewRef} collapsable={false}>
 
-                {/* ── Header ── */}
-                <View style={styles.header}>
-                    <Text style={[styles.title, activeTheme.title]}>
-                        💰 SIP Calculator
-                    </Text>
-                    <View style={styles.headerButtons}>
-                        <TouchableOpacity
-                            style={[styles.themeToggle, activeTheme.toggle]}
-                            onPress={handleReset}
-                        >
-                            <Text style={{ color: activeTheme.title.color }}>🗑 Reset</Text>
-                        </TouchableOpacity>
-                        {setTheme && (
+                {/* ── Main Input & Setup Card ── */}
+                <View style={[styles.cardWrapper, activeTheme.card]}>
+                    {/* ── Header ── */}
+                    <View style={styles.header}>
+                        <Text style={[styles.title, activeTheme.title]}>
+                            💰 SIP Calculator
+                        </Text>
+                        <View style={styles.headerButtons}>
                             <TouchableOpacity
                                 style={[styles.themeToggle, activeTheme.toggle]}
-                                onPress={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
+                                onPress={handleReset}
+                                activeOpacity={0.7}
                             >
-                                <Text style={{ color: activeTheme.title.color }}>
-                                    {theme === "light" ? "🌙 Dark" : "☀️ Light"}
-                                </Text>
+                                <Text style={[styles.themeToggleText, { color: activeTheme.title.color }]}>🗑 Reset</Text>
                             </TouchableOpacity>
-                        )}
+                            {setTheme && (
+                                <TouchableOpacity
+                                    style={[styles.themeToggle, activeTheme.toggle]}
+                                    onPress={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
+                                    activeOpacity={0.7}
+                                >
+                                    <Text style={[styles.themeToggleText, { color: activeTheme.title.color }]}>
+                                        {theme === "light" ? "🌙 Dark" : "☀️ Light"}
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
+                        </View>
                     </View>
-                </View>
 
-                {/* ── Mode Switcher (Monthly SIP vs Lumpsum) ── */}
-                <View style={styles.sipTypeToggleRow}>
-                    <TouchableOpacity
-                        style={[
-                            styles.sipTypeButton,
-                            !isLumpsum ? activeTheme.tabActive : activeTheme.toggle,
-                        ]}
-                        onPress={() => setIsLumpsum(false)}
-                        activeOpacity={0.8}
-                    >
-                        <Text
+                    {/* ── Mode Switcher (Monthly SIP vs Lumpsum) ── */}
+                    <View style={styles.sipTypeToggleRow}>
+                        <TouchableOpacity
                             style={[
-                                styles.sipTypeText,
-                                !isLumpsum ? activeTheme.tabActiveText : { color: activeTheme.title.color },
+                                styles.sipTypeButton,
+                                !isLumpsum ? activeTheme.tabActive : activeTheme.toggle,
+                                { borderColor: !isLumpsum ? activeTheme.investedColor : activeTheme.borderColor },
                             ]}
+                            onPress={() => setIsLumpsum(false)}
+                            activeOpacity={0.8}
                         >
-                            📅 Monthly SIP
-                        </Text>
-                    </TouchableOpacity>
+                            <Text
+                                style={[
+                                    styles.sipTypeText,
+                                    !isLumpsum ? activeTheme.tabActiveText : { color: activeTheme.title.color },
+                                ]}
+                            >
+                                📅 Monthly SIP
+                            </Text>
+                        </TouchableOpacity>
 
-                    <TouchableOpacity
-                        style={[
-                            styles.sipTypeButton,
-                            isLumpsum ? activeTheme.tabActive : activeTheme.toggle,
-                        ]}
-                        onPress={() => setIsLumpsum(true)}
-                        activeOpacity={0.8}
-                    >
-                        <Text
+                        <TouchableOpacity
                             style={[
-                                styles.sipTypeText,
-                                isLumpsum ? activeTheme.tabActiveText : { color: activeTheme.title.color },
+                                styles.sipTypeButton,
+                                isLumpsum ? activeTheme.tabActive : activeTheme.toggle,
+                                { borderColor: isLumpsum ? activeTheme.investedColor : activeTheme.borderColor },
                             ]}
+                            onPress={() => setIsLumpsum(true)}
+                            activeOpacity={0.8}
                         >
-                            💵 One-Time Lumpsum
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-
-                {/* ── Input Grid ── */}
-                <View style={styles.grid}>
-                    <View style={styles.col}>
-                        <Text style={[styles.label, activeTheme.label]}>
-                            {isLumpsum ? "Lumpsum Amount (₹)" : "Monthly Investment (₹)"}
-                        </Text>
-                        <TextInput
-                            style={[styles.input, activeTheme.input]}
-                            keyboardType="numeric"
-                            value={investmentAmount}
-                            placeholder="e.g. 10000"
-                            placeholderTextColor={activeTheme.placeholder.color}
-                            onChangeText={setInvestmentAmount}
-                        />
+                            <Text
+                                style={[
+                                    styles.sipTypeText,
+                                    isLumpsum ? activeTheme.tabActiveText : { color: activeTheme.title.color },
+                                ]}
+                            >
+                                💵 One-Time Lumpsum
+                            </Text>
+                        </TouchableOpacity>
                     </View>
 
-                    <View style={styles.col}>
-                        <Text style={[styles.label, activeTheme.label]}>
-                            Expected Return (p.a. %)
-                        </Text>
-                        <TextInput
-                            style={[styles.input, activeTheme.input]}
-                            keyboardType="numeric"
-                            value={annualRate}
-                            placeholder="e.g. 12"
-                            placeholderTextColor={activeTheme.placeholder.color}
-                            onChangeText={setAnnualRate}
-                        />
-                    </View>
+                    {/* ── Input Grid ── */}
+                    <View style={styles.grid}>
+                        <View style={styles.col}>
+                            <Text style={[styles.label, activeTheme.label]}>
+                                {isLumpsum ? "Lumpsum Amount (₹)" : "Monthly Investment (₹)"}
+                            </Text>
+                            <TextInput
+                                style={[styles.input, activeTheme.input, { borderColor: activeTheme.borderColor }]}
+                                keyboardType="numeric"
+                                value={investmentAmount}
+                                placeholder="e.g. 10000"
+                                placeholderTextColor={activeTheme.placeholder.color}
+                                onChangeText={setInvestmentAmount}
+                            />
+                        </View>
 
-                    <View style={styles.fullCol}>
-                        <Text style={[styles.label, activeTheme.label]}>
-                            Time Period (Years)
-                        </Text>
-                        <TextInput
-                            style={[styles.input, activeTheme.input]}
-                            keyboardType="numeric"
-                            value={years}
-                            placeholder="e.g. 10"
-                            placeholderTextColor={activeTheme.placeholder.color}
-                            onChangeText={setYears}
-                        />
+                        <View style={styles.col}>
+                            <Text style={[styles.label, activeTheme.label]}>
+                                Expected Return (p.a. %)
+                            </Text>
+                            <TextInput
+                                style={[styles.input, activeTheme.input, { borderColor: activeTheme.borderColor }]}
+                                keyboardType="numeric"
+                                value={annualRate}
+                                placeholder="e.g. 12"
+                                placeholderTextColor={activeTheme.placeholder.color}
+                                onChangeText={setAnnualRate}
+                            />
+                        </View>
 
-                        {/* Quick Years Selection Chips */}
-                        <View style={styles.chipRow}>
-                            {QUICK_YEARS.map((yr) => {
-                                const isSelected = String(yr) === String(years).trim();
-                                return (
-                                    <TouchableOpacity
-                                        key={yr}
-                                        style={[
-                                            styles.chip,
-                                            isSelected ? activeTheme.tabActive : activeTheme.toggle,
-                                        ]}
-                                        onPress={() => setYears(String(yr))}
-                                    >
-                                        <Text
+                        <View style={styles.fullCol}>
+                            <Text style={[styles.label, activeTheme.label]}>
+                                Time Period (Years)
+                            </Text>
+                            <TextInput
+                                style={[styles.input, activeTheme.input, { borderColor: activeTheme.borderColor }]}
+                                keyboardType="numeric"
+                                value={years}
+                                placeholder="e.g. 10"
+                                placeholderTextColor={activeTheme.placeholder.color}
+                                onChangeText={setYears}
+                            />
+
+                            {/* Quick Years Selection Chips */}
+                            <View style={styles.chipRow}>
+                                {QUICK_YEARS.map((yr) => {
+                                    const isSelected = String(yr) === String(years).trim();
+                                    return (
+                                        <TouchableOpacity
+                                            key={yr}
                                             style={[
-                                                styles.chipText,
-                                                isSelected ? activeTheme.tabActiveText : { color: activeTheme.title.color },
+                                                styles.chip,
+                                                isSelected ? activeTheme.tabActive : activeTheme.toggle,
+                                                { borderColor: isSelected ? activeTheme.investedColor : activeTheme.borderColor },
                                             ]}
+                                            onPress={() => setYears(String(yr))}
+                                            activeOpacity={0.7}
                                         >
-                                            {yr}Y
-                                        </Text>
-                                    </TouchableOpacity>
-                                );
-                            })}
+                                            <Text
+                                                style={[
+                                                    styles.chipText,
+                                                    isSelected ? activeTheme.tabActiveText : { color: activeTheme.title.color },
+                                                ]}
+                                            >
+                                                {yr}Y
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
                         </View>
                     </View>
                 </View>
 
                 {/* ── Results Summary Card ── */}
-                <View style={[styles.metricCard, activeTheme.card]}>
+                <View style={[styles.metricCard, activeTheme.card, { borderColor: activeTheme.borderColor }]}>
                     <View style={styles.metricRow}>
                         <Text style={[styles.metricLabel, activeTheme.subtext]}>
                             Total Invested
@@ -295,7 +304,7 @@ export default function SipCalculatorScreen({ theme = "dark", setTheme }) {
                     <View style={[styles.metricDivider, { backgroundColor: activeTheme.borderColor }]} />
 
                     <View style={styles.metricRow}>
-                        <Text style={[styles.totalMetricLabel, activeTheme.label]}>
+                        <Text style={[styles.totalMetricLabel, activeTheme.title]}>
                             Total Maturity Value
                         </Text>
                         <Text style={[styles.totalMetricValue, { color: activeTheme.returnsColor }]}>
@@ -314,22 +323,22 @@ export default function SipCalculatorScreen({ theme = "dark", setTheme }) {
 
                 {/* ── Yearly Milestones Table ── */}
                 {milestones.length > 0 && (
-                    <View style={[styles.tableCard, activeTheme.card]}>
-                        <Text style={[styles.tableTitle, activeTheme.label]}>
+                    <View style={[styles.tableCard, activeTheme.card, { borderColor: activeTheme.borderColor }]}>
+                        <Text style={[styles.tableTitle, activeTheme.title]}>
                             📈 Growth Progression
                         </Text>
 
                         <View style={[styles.tableHeader, { backgroundColor: activeTheme.tableHeaderBg }]}>
-                            <Text style={[styles.tableHeaderCell, { textAlign: "left", flex: 0.7 }, activeTheme.label]}>
+                            <Text style={[styles.tableHeaderCell, { textAlign: "left", flex: 0.7 }, activeTheme.subtext]}>
                                 Year
                             </Text>
-                            <Text style={[styles.tableHeaderCell, activeTheme.label]}>
+                            <Text style={[styles.tableHeaderCell, activeTheme.subtext]}>
                                 Invested
                             </Text>
-                            <Text style={[styles.tableHeaderCell, activeTheme.label]}>
+                            <Text style={[styles.tableHeaderCell, activeTheme.subtext]}>
                                 Returns
                             </Text>
-                            <Text style={[styles.tableHeaderCell, activeTheme.label]}>
+                            <Text style={[styles.tableHeaderCell, activeTheme.title]}>
                                 Total
                             </Text>
                         </View>
@@ -339,7 +348,7 @@ export default function SipCalculatorScreen({ theme = "dark", setTheme }) {
                                 key={m.year}
                                 style={[styles.tableRow, { borderBottomColor: activeTheme.borderColor }]}
                             >
-                                <Text style={[styles.tableCell, { textAlign: "left", flex: 0.7 }, activeTheme.label]}>
+                                <Text style={[styles.tableCell, { textAlign: "left", flex: 0.7 }, activeTheme.title]}>
                                     Yr {m.year}
                                 </Text>
                                 <Text style={[styles.tableCell, activeTheme.subtext]}>
@@ -348,7 +357,7 @@ export default function SipCalculatorScreen({ theme = "dark", setTheme }) {
                                 <Text style={[styles.tableCell, { color: activeTheme.returnsColor }]}>
                                     {formatCurrency(m.returns)}
                                 </Text>
-                                <Text style={[styles.tableCell, { fontWeight: "700" }, activeTheme.label]}>
+                                <Text style={[styles.tableCell, { fontWeight: "700" }, activeTheme.title]}>
                                     {formatCurrency(m.total)}
                                 </Text>
                             </View>
@@ -356,26 +365,24 @@ export default function SipCalculatorScreen({ theme = "dark", setTheme }) {
                     </View>
                 )}
 
-                <View style={{ height: 16 }} />
+                {/* ── Share / Export Button ── */}
+                <TouchableOpacity
+                    style={[
+                        styles.themeToggle,
+                        activeTheme.toggle,
+                        { marginVertical: 8, paddingVertical: 13, borderRadius: 12, borderWidth: 1, borderColor: activeTheme.borderColor, alignItems: "center" },
+                    ]}
+                    onPress={handleShare}
+                    disabled={sharing}
+                    activeOpacity={0.75}
+                >
+                    <Text style={{ fontSize: 14, fontWeight: "700", color: activeTheme.title.color }}>
+                        {sharing ? "⏳ Generating..." : "📤 Share / Export SIP Plan"}
+                    </Text>
+                </TouchableOpacity>
+
             </View>
-
-            {/* ── Share / Export Button ── */}
-            <TouchableOpacity
-                style={[
-                    styles.themeToggle,
-                    activeTheme.toggle,
-                    { marginVertical: 12, paddingVertical: 14, borderRadius: 10, alignItems: "center" },
-                ]}
-                onPress={handleShare}
-                disabled={sharing}
-                activeOpacity={0.75}
-            >
-                <Text style={{ fontSize: 15, fontWeight: "700", color: activeTheme.title.color }}>
-                    {sharing ? "⏳ Generating..." : "📤 Share / Export SIP Plan"}
-                </Text>
-            </TouchableOpacity>
-
-            <View style={{ height: 40 }} />
+            <View style={{ height: 30 }} />
         </ScrollView>
     );
 }
