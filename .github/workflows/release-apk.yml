@@ -18,29 +18,28 @@ jobs:
   build-and-release-apk:
     name: Build & Release Android APK
     runs-on: ubuntu-latest
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js 24
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Setup Expo and EAS CLI
-        uses: expo/expo-github-action@v8
-        with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Install EAS CLI
+        run: npm install -g eas-cli
 
       - name: Build Android APK via EAS
         run: |
-          npx eas-cli build --platform android --profile apk --non-interactive --wait --output=./Universal-Trading-Calculator.apk
+          eas build --platform android --profile apk --non-interactive --wait --output=./Universal-Trading-Calculator.apk
 
       - name: Determine Tag and Release Name
         id: release_info
