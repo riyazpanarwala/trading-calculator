@@ -84,11 +84,39 @@ From the Expo interactive CLI:
 
 ---
 
+## 🚀 Automated CI/CD (GitHub Actions)
+
+This repository includes automated workflows for **Continuous Deployment of the Web App** and **Automated APK Releases on GitHub**.
+
+### Required Secret Setup (One-time)
+To allow GitHub Actions to build and deploy via EAS, add your Expo token to your GitHub repository:
+1. Generate an Access Token at [expo.dev/settings/access-tokens](https://expo.dev/settings/access-tokens).
+2. In your GitHub repo, go to **Settings** > **Secrets and variables** > **Actions**.
+3. Click **New repository secret**, name it `EXPO_TOKEN`, and paste the token value.
+
+### 🌐 1. Automated Web Deployment (`deploy-web.yml`)
+- **Trigger**: Every time code is pushed to the `main` branch (or manually triggered in GitHub Actions tab).
+- **What it does**: Automatically runs `npx expo export --platform web` and deploys the latest version to EAS Hosting (`https://riyaz-trading-calc.expo.app/`).
+
+### 📱 2. Automated APK Release (`release-apk.yml`)
+- **Trigger**: Pushing a version tag or manually triggering via the GitHub Actions UI.
+- **Trigger via Git Tag**:
+  ```bash
+  git tag v1.0.2
+  git push origin v1.0.2
+  ```
+- **Trigger via GitHub Web UI**:
+  Go to **Actions** > **Release Android APK** > **Run workflow** (optionally input version tag).
+- **What it does**: Builds the standalone Android APK using EAS (`--profile apk`), creates a new **GitHub Release**, and attaches `Universal-Trading-Calculator.apk` directly to the release for instant download.
+
+---
+
 ## 🌐 Deploy — Web (Expo Hosting via EAS)
 
-The project is configured for automated builds and deployment via **EAS Hosting**:
+### Automated:
+Push to `main` branch — GitHub Actions deploys automatically!
 
-### One-Command Deployment:
+### Manual via Local Terminal:
 ```bash
 npm run deploy
 ```
