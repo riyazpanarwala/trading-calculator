@@ -39,7 +39,26 @@ jobs:
 
       - name: Build Android APK via EAS
         run: |
-          eas build --platform android --profile apk --non-interactive --wait --output=./Universal-Trading-Calculator.apk
+          eas build --platform android --profile apk --non-interactive --wait --json > build.json
+
+      - name: Download Built APK
+        run: |
+          APK_URL=$(node -e "
+            const fs = require('fs');
+            const data = JSON.parse(fs.readFileSync('build.json', 'utf8'));
+            const build = Array.isArray(data) ? data[0] : data;
+            const url = build.artifacts?.buildUrl;
+            if (!url) {
+              console.error('Build output did not contain artifacts.buildUrl:');
+              console.error(JSON.stringify(data, null, 2));
+              process.exit(1);
+            }
+            process.stdout.write(url);
+          ")
+          echo "Downloading APK from: $APK_URL"
+          curl -L -o Universal-Trading-Calculator.apk "$APK_URL"
+          ls -lh Universal-Trading-Calculator.apk
+
 
       - name: Determine Tag and Release Name
         id: release_info
