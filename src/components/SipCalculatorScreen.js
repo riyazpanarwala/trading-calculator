@@ -15,47 +15,87 @@ import styles, { lightTheme, darkTheme } from "./styles";
 import {
     calculateSipResult,
     calculateYearlyBreakdown,
+    calculateSipAndHoldResult,
+    calculateSipAndHoldYearlyBreakdown,
     formatCurrency,
 } from "../utils/sipCalculations";
 import SipDonutChart from "./SipDonutChart";
 
 const QUICK_YEARS = [1, 3, 5, 10, 15, 20, 25, 30];
+const QUICK_SIP_YEARS = [1, 3, 5, 7, 10, 15];
+const QUICK_TOTAL_YEARS = [5, 10, 15, 20, 25, 30];
 
 export default function SipCalculatorScreen({ theme = "dark", setTheme }) {
     const activeTheme = theme === "light" ? lightTheme : darkTheme;
     const captureViewRef = useRef(null);
 
-    // Form states
-    const [isLumpsum, setIsLumpsum] = useState(false);
+    // Mode: "regular" (Monthly SIP) | "sip_hold" (SIP & Grow) | "lumpsum" (One-time)
+    const [calcMode, setCalcMode] = useState("regular");
     const [investmentAmount, setInvestmentAmount] = useState("10000");
     const [annualRate, setAnnualRate] = useState("12");
     const [years, setYears] = useState("10");
+    const [sipYears, setSipYears] = useState("5");
+    const [totalYears, setTotalYears] = useState("20");
     const [sharing, setSharing] = useState(false);
+
+    const isLumpsum = calcMode === "lumpsum";
+    const isSipHold = calcMode === "sip_hold";
 
     // Calculations
     const result = useMemo(() => {
+        if (isSipHold) {
+            return calculateSipAndHoldResult({
+                investmentAmount,
+                annualRate,
+                sipYears,
+                totalYears,
+            });
+        }
         return calculateSipResult({
             investmentAmount,
             annualRate,
             years,
             isLumpsum,
         });
-    }, [investmentAmount, annualRate, years, isLumpsum]);
+    }, [calcMode, investmentAmount, annualRate, years, sipYears, totalYears, isSipHold, isLumpsum]);
 
     const milestones = useMemo(() => {
+        if (isSipHold) {
+            return calculateSipAndHoldYearlyBreakdown({
+                investmentAmount,
+                annualRate,
+                sipYears,
+                totalYears,
+            });
+        }
         return calculateYearlyBreakdown({
             investmentAmount,
             annualRate,
             years,
             isLumpsum,
         });
-    }, [investmentAmount, annualRate, years, isLumpsum]);
+    }, [calcMode, investmentAmount, annualRate, years, sipYears, totalYears, isSipHold, isLumpsum]);
 
     const handleReset = () => {
         setInvestmentAmount("10000");
         setAnnualRate("12");
         setYears("10");
-        setIsLumpsum(false);
+        setSipYears("5");
+        setTotalYears("20");
+    };
+
+    const selectSipYears = (yr) => {
+        setSipYears(String(yr));
+        if (parseFloat(totalYears) < yr) {
+            setTotalYears(String(yr));
+        }
+    };
+
+    const selectTotalYears = (yr) => {
+        setTotalYears(String(yr));
+        if (parseFloat(sipYears) > yr) {
+            setSipYears(String(yr));
+        }
     };
 
     const handleShare = async () => {
@@ -83,10 +123,14 @@ export default function SipCalculatorScreen({ theme = "dark", setTheme }) {
                         const blob = await response.blob();
                         const file = new File([blob], "sip-plan.png", { type: "image/png" });
 
+                        const shareText = isSipHold
+                            ? `SIP & Grow Plan: Invested ${formatCurrency(result.totalInvested)} for ${sipYears} yrs, Final Value at ${totalYears} yrs: ${formatCurrency(result.maturityValue)}`
+                            : `SIP Plan: Invested ${formatCurrency(result.totalInvested)}, Maturity: ${formatCurrency(result.maturityValue)}`;
+
                         if (navigator.canShare({ files: [file] })) {
                             await navigator.share({
                                 title: "SIP Investment Plan",
-                                text: `SIP Plan: Invested ${formatCurrency(result.totalInvested)}, Maturity: ${formatCurrency(result.maturityValue)}`,
+                                text: shareText,
                                 files: [file],
                             });
                             shared = true;
@@ -164,43 +208,62 @@ export default function SipCalculatorScreen({ theme = "dark", setTheme }) {
                         </View>
                     </View>
 
-                    {/* ── Mode Switcher (Monthly SIP vs Lumpsum) ── */}
+                    {/* ── Mode Switcher (Monthly SIP vs SIP & Grow vs Lumpsum) ── */}
                     <View style={styles.sipTypeToggleRow}>
                         <TouchableOpacity
                             style={[
                                 styles.sipTypeButton,
-                                !isLumpsum ? activeTheme.tabActive : activeTheme.toggle,
-                                { borderColor: !isLumpsum ? activeTheme.investedColor : activeTheme.borderColor },
+                                calcMode === "regular" ? activeTheme.tabActive : activeTheme.toggle,
+                                { borderColor: calcMode === "regular" ? activeTheme.investedColor : activeTheme.borderColor },
                             ]}
-                            onPress={() => setIsLumpsum(false)}
+                            onPress={() => setCalcMode("regular")}
                             activeOpacity={0.8}
                         >
                             <Text
                                 style={[
                                     styles.sipTypeText,
-                                    !isLumpsum ? activeTheme.tabActiveText : { color: activeTheme.title.color },
+                                    calcMode === "regular" ? activeTheme.tabActiveText : { color: activeTheme.title.color },
                                 ]}
                             >
-                                📅 Monthly SIP
+                                📅 Regular SIP
                             </Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
                             style={[
                                 styles.sipTypeButton,
-                                isLumpsum ? activeTheme.tabActive : activeTheme.toggle,
-                                { borderColor: isLumpsum ? activeTheme.investedColor : activeTheme.borderColor },
+                                calcMode === "sip_hold" ? activeTheme.tabActive : activeTheme.toggle,
+                                { borderColor: calcMode === "sip_hold" ? activeTheme.investedColor : activeTheme.borderColor },
                             ]}
-                            onPress={() => setIsLumpsum(true)}
+                            onPress={() => setCalcMode("sip_hold")}
                             activeOpacity={0.8}
                         >
                             <Text
                                 style={[
                                     styles.sipTypeText,
-                                    isLumpsum ? activeTheme.tabActiveText : { color: activeTheme.title.color },
+                                    calcMode === "sip_hold" ? activeTheme.tabActiveText : { color: activeTheme.title.color },
                                 ]}
                             >
-                                💵 One-Time Lumpsum
+                                🌱 SIP & Grow
+                            </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[
+                                styles.sipTypeButton,
+                                calcMode === "lumpsum" ? activeTheme.tabActive : activeTheme.toggle,
+                                { borderColor: calcMode === "lumpsum" ? activeTheme.investedColor : activeTheme.borderColor },
+                            ]}
+                            onPress={() => setCalcMode("lumpsum")}
+                            activeOpacity={0.8}
+                        >
+                            <Text
+                                style={[
+                                    styles.sipTypeText,
+                                    calcMode === "lumpsum" ? activeTheme.tabActiveText : { color: activeTheme.title.color },
+                                ]}
+                            >
+                                💵 Lumpsum
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -235,66 +298,192 @@ export default function SipCalculatorScreen({ theme = "dark", setTheme }) {
                             />
                         </View>
 
-                        <View style={styles.fullCol}>
-                            <Text style={[styles.label, activeTheme.label]}>
-                                Time Period (Years)
-                            </Text>
-                            <TextInput
-                                style={[styles.input, activeTheme.input, { borderColor: activeTheme.borderColor }]}
-                                keyboardType="numeric"
-                                value={years}
-                                placeholder="e.g. 10"
-                                placeholderTextColor={activeTheme.placeholder.color}
-                                onChangeText={setYears}
-                            />
+                        {!isSipHold ? (
+                            /* Regular SIP or Lumpsum Duration */
+                            <View style={styles.fullCol}>
+                                <Text style={[styles.label, activeTheme.label]}>
+                                    Time Period (Years)
+                                </Text>
+                                <TextInput
+                                    style={[styles.input, activeTheme.input, { borderColor: activeTheme.borderColor }]}
+                                    keyboardType="numeric"
+                                    value={years}
+                                    placeholder="e.g. 10"
+                                    placeholderTextColor={activeTheme.placeholder.color}
+                                    onChangeText={setYears}
+                                />
 
-                            {/* Quick Years Selection Chips */}
-                            <View style={styles.chipRow}>
-                                {QUICK_YEARS.map((yr) => {
-                                    const isSelected = String(yr) === String(years).trim();
-                                    return (
-                                        <TouchableOpacity
-                                            key={yr}
-                                            style={[
-                                                styles.chip,
-                                                isSelected ? activeTheme.tabActive : activeTheme.toggle,
-                                                { borderColor: isSelected ? activeTheme.investedColor : activeTheme.borderColor },
-                                            ]}
-                                            onPress={() => setYears(String(yr))}
-                                            activeOpacity={0.7}
-                                        >
-                                            <Text
+                                {/* Quick Years Selection Chips */}
+                                <View style={styles.chipRow}>
+                                    {QUICK_YEARS.map((yr) => {
+                                        const isSelected = String(yr) === String(years).trim();
+                                        return (
+                                            <TouchableOpacity
+                                                key={yr}
                                                 style={[
-                                                    styles.chipText,
-                                                    isSelected ? activeTheme.tabActiveText : { color: activeTheme.title.color },
+                                                    styles.chip,
+                                                    isSelected ? activeTheme.tabActive : activeTheme.toggle,
+                                                    { borderColor: isSelected ? activeTheme.investedColor : activeTheme.borderColor },
                                                 ]}
+                                                onPress={() => setYears(String(yr))}
+                                                activeOpacity={0.7}
                                             >
-                                                {yr}Y
-                                            </Text>
-                                        </TouchableOpacity>
-                                    );
-                                })}
+                                                <Text
+                                                    style={[
+                                                        styles.chipText,
+                                                        isSelected ? activeTheme.tabActiveText : { color: activeTheme.title.color },
+                                                    ]}
+                                                >
+                                                    {yr}Y
+                                                </Text>
+                                            </TouchableOpacity>
+                                        );
+                                    })}
+                                </View>
                             </View>
-                        </View>
+                        ) : (
+                            /* SIP & Grow dual durations: SIP payment period & Total horizon */
+                            <>
+                                <View style={styles.col}>
+                                    <Text style={[styles.label, activeTheme.label]}>
+                                        SIP Period (Pay Years)
+                                    </Text>
+                                    <TextInput
+                                        style={[styles.input, activeTheme.input, { borderColor: activeTheme.borderColor }]}
+                                        keyboardType="numeric"
+                                        value={sipYears}
+                                        placeholder="e.g. 5"
+                                        placeholderTextColor={activeTheme.placeholder.color}
+                                        onChangeText={(val) => {
+                                            setSipYears(val);
+                                            const num = parseFloat(val);
+                                            if (!isNaN(num) && parseFloat(totalYears) < num) {
+                                                setTotalYears(String(num));
+                                            }
+                                        }}
+                                    />
+                                    <View style={styles.chipRow}>
+                                        {QUICK_SIP_YEARS.map((yr) => {
+                                            const isSelected = String(yr) === String(sipYears).trim();
+                                            return (
+                                                <TouchableOpacity
+                                                    key={yr}
+                                                    style={[
+                                                        styles.chip,
+                                                        isSelected ? activeTheme.tabActive : activeTheme.toggle,
+                                                        { borderColor: isSelected ? activeTheme.investedColor : activeTheme.borderColor },
+                                                    ]}
+                                                    onPress={() => selectSipYears(yr)}
+                                                    activeOpacity={0.7}
+                                                >
+                                                    <Text
+                                                        style={[
+                                                            styles.chipText,
+                                                            isSelected ? activeTheme.tabActiveText : { color: activeTheme.title.color },
+                                                        ]}
+                                                    >
+                                                        {yr}Y
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            );
+                                        })}
+                                    </View>
+                                </View>
+
+                                <View style={styles.col}>
+                                    <Text style={[styles.label, activeTheme.label]}>
+                                        Total Horizon (Years)
+                                    </Text>
+                                    <TextInput
+                                        style={[styles.input, activeTheme.input, { borderColor: activeTheme.borderColor }]}
+                                        keyboardType="numeric"
+                                        value={totalYears}
+                                        placeholder="e.g. 20"
+                                        placeholderTextColor={activeTheme.placeholder.color}
+                                        onChangeText={(val) => setTotalYears(val)}
+                                    />
+                                    <View style={styles.chipRow}>
+                                        {QUICK_TOTAL_YEARS.map((yr) => {
+                                            const isSelected = String(yr) === String(totalYears).trim();
+                                            return (
+                                                <TouchableOpacity
+                                                    key={yr}
+                                                    style={[
+                                                        styles.chip,
+                                                        isSelected ? activeTheme.tabActive : activeTheme.toggle,
+                                                        { borderColor: isSelected ? activeTheme.investedColor : activeTheme.borderColor },
+                                                    ]}
+                                                    onPress={() => selectTotalYears(yr)}
+                                                    activeOpacity={0.7}
+                                                >
+                                                    <Text
+                                                        style={[
+                                                            styles.chipText,
+                                                            isSelected ? activeTheme.tabActiveText : { color: activeTheme.title.color },
+                                                        ]}
+                                                    >
+                                                        {yr}Y
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            );
+                                        })}
+                                    </View>
+                                </View>
+                            </>
+                        )}
                     </View>
+
+                    {/* Explanatory Info Banner for SIP & Grow */}
+                    {isSipHold && (
+                        <View style={[styles.infoBanner, { backgroundColor: activeTheme.bannerBg, borderColor: activeTheme.bannerBorder }]}>
+                            <Text style={{ fontSize: 16 }}>💡</Text>
+                            <Text style={[styles.infoBannerText, { color: activeTheme.bannerText }]}>
+                                You invest monthly for {sipYears || 0} yrs ({formatCurrency(result.totalInvested)} total). Then stop contributing and let your {formatCurrency(result.sipMaturityValue)} corpus compound untouched for another {result.holdingYears} yrs to reach {formatCurrency(result.maturityValue)}!
+                            </Text>
+                        </View>
+                    )}
                 </View>
 
                 {/* ── Results Summary Card ── */}
                 <View style={[styles.metricCard, activeTheme.card, { borderColor: activeTheme.borderColor }]}>
                     <View style={styles.metricRow}>
                         <Text style={[styles.metricLabel, activeTheme.subtext]}>
-                            Total Invested
+                            {isSipHold ? `Total Invested (${sipYears || 0} Yrs)` : "Total Invested"}
                         </Text>
                         <Text style={[styles.metricValue, { color: activeTheme.investedColor }]}>
                             {formatCurrency(result.totalInvested)}
                         </Text>
                     </View>
 
+                    {isSipHold && result.holdingYears > 0 && (
+                        <>
+                            <View style={[styles.metricDivider, { backgroundColor: activeTheme.borderColor }]} />
+                            <View style={styles.metricRow}>
+                                <Text style={[styles.metricLabel, activeTheme.subtext]}>
+                                    Corpus When SIP Stops (Yr {sipYears})
+                                </Text>
+                                <Text style={[styles.metricValue, { color: activeTheme.investedColor }]}>
+                                    {formatCurrency(result.sipMaturityValue)}
+                                </Text>
+                            </View>
+
+                            <View style={[styles.metricDivider, { backgroundColor: activeTheme.borderColor }]} />
+                            <View style={styles.metricRow}>
+                                <Text style={[styles.metricLabel, activeTheme.subtext]}>
+                                    Post-SIP Compounding (+{result.holdingYears} Yrs)
+                                </Text>
+                                <Text style={[styles.metricValue, { color: activeTheme.returnsColor }]}>
+                                    +{formatCurrency(result.holdingGain)}
+                                </Text>
+                            </View>
+                        </>
+                    )}
+
                     <View style={[styles.metricDivider, { backgroundColor: activeTheme.borderColor }]} />
 
                     <View style={styles.metricRow}>
                         <Text style={[styles.metricLabel, activeTheme.subtext]}>
-                            Estimated Returns
+                            Estimated Total Returns
                         </Text>
                         <Text style={[styles.metricValue, { color: activeTheme.returnsColor }]}>
                             +{formatCurrency(result.estimatedReturns)}
@@ -325,11 +514,11 @@ export default function SipCalculatorScreen({ theme = "dark", setTheme }) {
                 {milestones.length > 0 && (
                     <View style={[styles.tableCard, activeTheme.card, { borderColor: activeTheme.borderColor }]}>
                         <Text style={[styles.tableTitle, activeTheme.title]}>
-                            📈 Growth Progression
+                            📈 Growth Progression {isSipHold && `(${sipYears}Y SIP + ${result.holdingYears}Y Compounding)`}
                         </Text>
 
                         <View style={[styles.tableHeader, { backgroundColor: activeTheme.tableHeaderBg }]}>
-                            <Text style={[styles.tableHeaderCell, { textAlign: "left", flex: 0.7 }, activeTheme.subtext]}>
+                            <Text style={[styles.tableHeaderCell, { textAlign: "left", flex: isSipHold ? 0.9 : 0.7 }, activeTheme.subtext]}>
                                 Year
                             </Text>
                             <Text style={[styles.tableHeaderCell, activeTheme.subtext]}>
@@ -348,9 +537,28 @@ export default function SipCalculatorScreen({ theme = "dark", setTheme }) {
                                 key={m.year}
                                 style={[styles.tableRow, { borderBottomColor: activeTheme.borderColor }]}
                             >
-                                <Text style={[styles.tableCell, { textAlign: "left", flex: 0.7 }, activeTheme.title]}>
-                                    Yr {m.year}
-                                </Text>
+                                <View style={{ flex: isSipHold ? 0.9 : 0.7, justifyContent: "center" }}>
+                                    <Text style={[styles.tableCell, { textAlign: "left" }, activeTheme.title]}>
+                                        Yr {m.year}
+                                    </Text>
+                                    {isSipHold && m.phase && (
+                                        <View
+                                            style={[
+                                                styles.phaseBadge,
+                                                { backgroundColor: m.phase === "sip" ? activeTheme.badgeSipBg : activeTheme.badgeHoldBg },
+                                            ]}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.phaseBadgeText,
+                                                    { color: m.phase === "sip" ? activeTheme.badgeSipText : activeTheme.badgeHoldText },
+                                                ]}
+                                            >
+                                                {m.phaseLabel}
+                                            </Text>
+                                        </View>
+                                    )}
+                                </View>
                                 <Text style={[styles.tableCell, activeTheme.subtext]}>
                                     {formatCurrency(m.invested)}
                                 </Text>

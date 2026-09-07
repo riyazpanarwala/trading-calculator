@@ -20,6 +20,13 @@ export const lightTheme = {
     returnsColor:   "#10B981",
     totalColor:     "#0F172A",
     subtext:        { color: "#64748B" },
+    badgeSipBg:     "#EFF6FF",
+    badgeSipText:   "#2563EB",
+    badgeHoldBg:    "#ECFDF5",
+    badgeHoldText:  "#059669",
+    bannerBg:       "#F0FDF4",
+    bannerBorder:   "#BBF7D0",
+    bannerText:     "#166534",
 };
 
 export const darkTheme = {
@@ -42,6 +49,13 @@ export const darkTheme = {
     returnsColor:   "#10B981",
     totalColor:     "#F8FAFC",
     subtext:        { color: "#94A3B8" },
+    badgeSipBg:     "#1E293B",
+    badgeSipText:   "#60A5FA",
+    badgeHoldBg:    "#064E3B",
+    badgeHoldText:  "#34D399",
+    bannerBg:       "#062016",
+    bannerBorder:   "#047857",
+    bannerText:     "#6EE7B7",
 };
 
 export default StyleSheet.create({
@@ -232,13 +246,14 @@ export default StyleSheet.create({
 
     sipTypeToggleRow: {
         flexDirection: "row",
-        gap: 8,
+        gap: 6,
         marginBottom: 16,
     },
 
     sipTypeButton: {
         flex: 1,
         paddingVertical: 10,
+        paddingHorizontal: 4,
         borderRadius: 10,
         borderWidth: 1,
         alignItems: "center",
@@ -246,8 +261,32 @@ export default StyleSheet.create({
     },
 
     sipTypeText: {
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: "700",
+        textAlign: "center",
+    },
+
+    helperText: {
+        fontSize: 11,
+        fontWeight: "500",
+        marginTop: 4,
+    },
+
+    infoBanner: {
+        padding: 12,
+        borderRadius: 12,
+        borderWidth: 1,
+        marginBottom: 16,
+        flexDirection: "row",
+        alignItems: "flex-start",
+        gap: 8,
+    },
+
+    infoBannerText: {
+        flex: 1,
+        fontSize: 12,
+        lineHeight: 18,
+        fontWeight: "600",
     },
 
     chipRow: {
@@ -353,5 +392,19 @@ export default StyleSheet.create({
         fontSize: 12,
         fontWeight: "600",
         textAlign: "right",
+    },
+
+    phaseBadge: {
+        paddingHorizontal: 5,
+        paddingVertical: 1.5,
+        borderRadius: 4,
+        alignSelf: "flex-start",
+        marginTop: 2,
+    },
+
+    phaseBadgeText: {
+        fontSize: 9,
+        fontWeight: "700",
+        letterSpacing: 0.2,
     },
 });
