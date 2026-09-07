@@ -18,12 +18,16 @@ A powerful, high-precision **Trading Risk & Wealth Compounding Calculator** buil
 - 🪜 **Interactive Price Ladder Chart**: SVG-rendered price action ladder illustrating Target, Entry, and Stop Loss thresholds with distance percentages.
 - 📤 **Screenshot Sharing & Export**: Instant high-resolution screenshot export for trade setups on Web (Web Share / direct download), iOS, and Android.
 
-### 2. 💰 SIP & Lumpsum Wealth Calculator
-- 📅 **Dual Compounding Modes**: Seamlessly switch between **Monthly SIP** and **One-Time Lumpsum** investment models.
-- ⚡ **Quick-Select Horizon Chips**: One-tap duration selection (`1Y`, `3Y`, `5Y`, `10Y`, `15Y`, `20Y`, `25Y`, `30Y`).
+### 2. 💰 Wealth Compounding & SIP Calculator
+- 📅 **Three Flexible Investment Modes**:
+  - **Regular Monthly SIP**: Standard recurring monthly investments over the selected time horizon.
+  - **🌱 SIP & Grow (Stop SIP & Hold)**: Invest monthly for a set period (e.g., 5 years), then stop contributing while your accumulated corpus remains invested and compounds untouched until your target horizon (e.g., 20 years).
+  - **One-Time Lumpsum**: Single upfront capital allocation compounded over the selected horizon.
+- ⏳ **Dual Horizon Duration Controls**: Dedicated controls in *SIP & Grow* mode for **SIP Payment Period** and **Total Investment Horizon** with one-tap quick chips (`1Y` to `30Y`).
+- 💡 **Dynamic Strategy Callout**: Automatically summarizes initial capital invested, corpus value at the moment SIP stops, post-SIP compounded gains, and final wealth.
+- 🏷️ **Phase-Aware Growth Progression Ledger**: Milestone table with **`Active SIP`** and **`Growing`** phase badges, visually distinguishing contribution years from pure compound growth years.
 - 🍩 **SVG Donut Asset Breakdown**: Dynamic dual-arc visual breakdown showing Principal Invested vs. Compounded Wealth with compact currency notations (`₹ L / Cr`).
-- 📈 **Yearly Growth Progression Ledger**: Milestone table displaying yearly growth, invested capital, returns, and total future value.
-- 📤 **SIP Plan Sharing**: One-click sharing and export for investment plans.
+- 📤 **SIP Plan Sharing & Export**: One-click sharing and screenshot export across Web, Android, and iOS.
 
 ### 3. 🎨 Premium Fintech UI & Responsive Layout
 - 📱 **Universal Responsiveness**: Adaptive centered container (`maxWidth: 720px`) on desktop web displays with native full-window body scrolling (no nested inner scrollbars).
@@ -40,7 +44,7 @@ A powerful, high-precision **Trading Risk & Wealth Compounding Calculator** buil
 ├── src/
 │   ├── components/
 │   │   ├── CalculatorScreen.js            # Trading workstation (10-field engine, badge, ladder)
-│   │   ├── SipCalculatorScreen.js         # SIP & Lumpsum calculator, metrics, milestones table
+│   │   ├── SipCalculatorScreen.js         # Wealth workstation (Regular SIP, SIP & Grow, Lumpsum)
 │   │   ├── SipDonutChart.js               # SVG Donut investment vs. returns chart
 │   │   └── styles.js                      # Design system tokens (dark/light themes, cards, grid)
 │   └── utils/
