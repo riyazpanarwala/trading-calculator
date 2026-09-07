@@ -23,9 +23,11 @@ A powerful, high-precision **Trading Risk & Wealth Compounding Calculator** buil
   - **Regular Monthly SIP**: Standard recurring monthly investments over the selected time horizon.
   - **🌱 SIP & Grow (Stop SIP & Hold)**: Invest monthly for a set period (e.g., 5 years), then stop contributing while your accumulated corpus remains invested and compounds untouched until your target horizon (e.g., 20 years).
   - **One-Time Lumpsum**: Single upfront capital allocation compounded over the selected horizon.
+- 📈 **Annual Step-Up SIP (+% / Year)**: Model salary growth by stepping up monthly contributions by +5%, +10%, +15%, or custom % every year with quick chips.
+- 🎈 **Inflation-Adjusted Real Wealth Toggle**: Instant purchasing power calculation discounted against inflation (customizable % p.a., with India average 6% default) revealing real purchasing power alongside nominal wealth.
 - ⏳ **Dual Horizon Duration Controls**: Dedicated controls in *SIP & Grow* mode for **SIP Payment Period** and **Total Investment Horizon** with one-tap quick chips (`1Y` to `30Y`).
-- 💡 **Dynamic Strategy Callout**: Automatically summarizes initial capital invested, corpus value at the moment SIP stops, post-SIP compounded gains, and final wealth.
-- 🏷️ **Phase-Aware Growth Progression Ledger**: Milestone table with **`Active SIP`** and **`Growing`** phase badges, visually distinguishing contribution years from pure compound growth years.
+- 💡 **Dynamic Strategy Callout**: Automatically summarizes initial capital invested, step-up contribution growth, corpus value at the moment SIP stops, post-SIP compounded gains, and final wealth.
+- 🏷️ **Phase-Aware Growth Progression Ledger**: Milestone table with **`Active SIP`** and **`Growing`** phase badges, annual monthly contribution levels, and Real Value vs. Nominal Value side-by-side.
 - 🍩 **SVG Donut Asset Breakdown**: Dynamic dual-arc visual breakdown showing Principal Invested vs. Compounded Wealth with compact currency notations (`₹ L / Cr`).
 - 📤 **SIP Plan Sharing & Export**: One-click sharing and screenshot export across Web, Android, and iOS.
 

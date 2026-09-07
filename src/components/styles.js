@@ -27,6 +27,9 @@ export const lightTheme = {
     bannerBg:       "#F0FDF4",
     bannerBorder:   "#BBF7D0",
     bannerText:     "#166534",
+    inflationColor: "#D97706",
+    inflationBg:    "#FEF3C7",
+    inflationText:  "#92400E",
 };
 
 export const darkTheme = {
@@ -56,6 +59,9 @@ export const darkTheme = {
     bannerBg:       "#062016",
     bannerBorder:   "#047857",
     bannerText:     "#6EE7B7",
+    inflationColor: "#FBBF24",
+    inflationBg:    "#451A03",
+    inflationText:  "#FDE68A",
 };
 
 export default StyleSheet.create({
@@ -406,5 +412,63 @@ export default StyleSheet.create({
         fontSize: 9,
         fontWeight: "700",
         letterSpacing: 0.2,
+    },
+
+    inflationCard: {
+        borderRadius: 14,
+        borderWidth: 1,
+        padding: 14,
+        marginBottom: 16,
+    },
+
+    inflationHeaderRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        flexWrap: "wrap",
+        gap: 8,
+    },
+
+    inflationTitleCol: {
+        flex: 1,
+        minWidth: 160,
+    },
+
+    inflationTitle: {
+        fontSize: 13,
+        fontWeight: "700",
+        letterSpacing: -0.2,
+    },
+
+    inflationSubtitle: {
+        fontSize: 11,
+        marginTop: 2,
+    },
+
+    inflationToggleBtn: {
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 8,
+        borderWidth: 1,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+
+    inflationToggleBtnText: {
+        fontSize: 12,
+        fontWeight: "700",
+    },
+
+    erosionBadge: {
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 6,
+        alignSelf: "flex-start",
+        marginTop: 4,
+    },
+
+    erosionBadgeText: {
+        fontSize: 10,
+        fontWeight: "700",
     },
 });
