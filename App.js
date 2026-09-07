@@ -8,7 +8,9 @@ import SwpCalculatorScreen from "./src/components/SwpCalculatorScreen";
 import StockAverageScreen from "./src/components/StockAverageScreen";
 import BrokerageCalculatorScreen from "./src/components/BrokerageCalculatorScreen";
 import GoalCalculatorScreen from "./src/components/GoalCalculatorScreen";
+import LoanCalculatorScreen from "./src/components/LoanCalculatorScreen";
 import styles, { lightTheme, darkTheme } from "./src/components/styles";
+import { ScrollView } from "react-native";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("trading");
@@ -54,131 +56,165 @@ export default function App() {
         <View style={{ width: "100%", paddingHorizontal: 16, paddingTop: 12 }}>
           <View style={{ width: "100%", maxWidth: 720, alignSelf: "center" }}>
             <View style={[styles.tabBar, activeTheme.tabBarBg, { borderColor: activeTheme.borderColor }]}>
-              <TouchableOpacity
-                style={[
-                  styles.tabButton,
-                  activeTab === "trading" ? activeTheme.tabActive : activeTheme.tabInactive,
-                ]}
-                onPress={() => setActiveTab("trading")}
-                activeOpacity={0.8}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ flexDirection: "row", minWidth: "100%" }}
               >
-                <Text
+                <TouchableOpacity
                   style={[
-                    styles.tabButtonText,
-                    activeTab === "trading"
-                      ? activeTheme.tabActiveText
-                      : activeTheme.tabInactiveText,
+                    styles.tabButton,
+                    activeTab === "trading" ? activeTheme.tabActive : activeTheme.tabInactive,
+                    { paddingHorizontal: 10, minWidth: 70 },
                   ]}
-                  numberOfLines={1}
+                  onPress={() => setActiveTab("trading")}
+                  activeOpacity={0.8}
                 >
-                  📈 Trading
-                </Text>
-              </TouchableOpacity>
+                  <Text
+                    style={[
+                      styles.tabButtonText,
+                      activeTab === "trading"
+                        ? activeTheme.tabActiveText
+                        : activeTheme.tabInactiveText,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    📈 Trading
+                  </Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[
-                  styles.tabButton,
-                  activeTab === "sip" ? activeTheme.tabActive : activeTheme.tabInactive,
-                ]}
-                onPress={() => setActiveTab("sip")}
-                activeOpacity={0.8}
-              >
-                <Text
+                <TouchableOpacity
                   style={[
-                    styles.tabButtonText,
-                    activeTab === "sip"
-                      ? activeTheme.tabActiveText
-                      : activeTheme.tabInactiveText,
+                    styles.tabButton,
+                    activeTab === "sip" ? activeTheme.tabActive : activeTheme.tabInactive,
+                    { paddingHorizontal: 10, minWidth: 70 },
                   ]}
-                  numberOfLines={1}
+                  onPress={() => setActiveTab("sip")}
+                  activeOpacity={0.8}
                 >
-                  💰 SIP
-                </Text>
-              </TouchableOpacity>
+                  <Text
+                    style={[
+                      styles.tabButtonText,
+                      activeTab === "sip"
+                        ? activeTheme.tabActiveText
+                        : activeTheme.tabInactiveText,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    💰 SIP
+                  </Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[
-                  styles.tabButton,
-                  activeTab === "swp" ? activeTheme.tabActive : activeTheme.tabInactive,
-                ]}
-                onPress={() => setActiveTab("swp")}
-                activeOpacity={0.8}
-              >
-                <Text
+                <TouchableOpacity
                   style={[
-                    styles.tabButtonText,
-                    activeTab === "swp"
-                      ? activeTheme.tabActiveText
-                      : activeTheme.tabInactiveText,
+                    styles.tabButton,
+                    activeTab === "swp" ? activeTheme.tabActive : activeTheme.tabInactive,
+                    { paddingHorizontal: 10, minWidth: 70 },
                   ]}
-                  numberOfLines={1}
+                  onPress={() => setActiveTab("swp")}
+                  activeOpacity={0.8}
                 >
-                  🏖️ SWP
-                </Text>
-              </TouchableOpacity>
+                  <Text
+                    style={[
+                      styles.tabButtonText,
+                      activeTab === "swp"
+                        ? activeTheme.tabActiveText
+                        : activeTheme.tabInactiveText,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    🏖️ SWP
+                  </Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[
-                  styles.tabButton,
-                  activeTab === "average" ? activeTheme.tabActive : activeTheme.tabInactive,
-                ]}
-                onPress={() => setActiveTab("average")}
-                activeOpacity={0.8}
-              >
-                <Text
+                <TouchableOpacity
                   style={[
-                    styles.tabButtonText,
-                    activeTab === "average"
-                      ? activeTheme.tabActiveText
-                      : activeTheme.tabInactiveText,
+                    styles.tabButton,
+                    activeTab === "average" ? activeTheme.tabActive : activeTheme.tabInactive,
+                    { paddingHorizontal: 10, minWidth: 70 },
                   ]}
-                  numberOfLines={1}
+                  onPress={() => setActiveTab("average")}
+                  activeOpacity={0.8}
                 >
-                  🔄 Average
-                </Text>
-              </TouchableOpacity>
+                  <Text
+                    style={[
+                      styles.tabButtonText,
+                      activeTab === "average"
+                        ? activeTheme.tabActiveText
+                        : activeTheme.tabInactiveText,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    🔄 Average
+                  </Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[
-                  styles.tabButton,
-                  activeTab === "brokerage" ? activeTheme.tabActive : activeTheme.tabInactive,
-                ]}
-                onPress={() => setActiveTab("brokerage")}
-                activeOpacity={0.8}
-              >
-                <Text
+                <TouchableOpacity
                   style={[
-                    styles.tabButtonText,
-                    activeTab === "brokerage"
-                      ? activeTheme.tabActiveText
-                      : activeTheme.tabInactiveText,
+                    styles.tabButton,
+                    activeTab === "brokerage" ? activeTheme.tabActive : activeTheme.tabInactive,
+                    { paddingHorizontal: 10, minWidth: 70 },
                   ]}
-                  numberOfLines={1}
+                  onPress={() => setActiveTab("brokerage")}
+                  activeOpacity={0.8}
                 >
-                  🏦 Brokerage
-                </Text>
-              </TouchableOpacity>
+                  <Text
+                    style={[
+                      styles.tabButtonText,
+                      activeTab === "brokerage"
+                        ? activeTheme.tabActiveText
+                        : activeTheme.tabInactiveText,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    🏦 Brokerage
+                  </Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[
-                  styles.tabButton,
-                  activeTab === "goal" ? activeTheme.tabActive : activeTheme.tabInactive,
-                ]}
-                onPress={() => setActiveTab("goal")}
-                activeOpacity={0.8}
-              >
-                <Text
+                <TouchableOpacity
                   style={[
-                    styles.tabButtonText,
-                    activeTab === "goal"
-                      ? activeTheme.tabActiveText
-                      : activeTheme.tabInactiveText,
+                    styles.tabButton,
+                    activeTab === "goal" ? activeTheme.tabActive : activeTheme.tabInactive,
+                    { paddingHorizontal: 10, minWidth: 70 },
                   ]}
-                  numberOfLines={1}
+                  onPress={() => setActiveTab("goal")}
+                  activeOpacity={0.8}
                 >
-                  🎯 Goal
-                </Text>
-              </TouchableOpacity>
+                  <Text
+                    style={[
+                      styles.tabButtonText,
+                      activeTab === "goal"
+                        ? activeTheme.tabActiveText
+                        : activeTheme.tabInactiveText,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    🎯 Goal
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.tabButton,
+                    activeTab === "loan" ? activeTheme.tabActive : activeTheme.tabInactive,
+                    { paddingHorizontal: 10, minWidth: 70 },
+                  ]}
+                  onPress={() => setActiveTab("loan")}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[
+                      styles.tabButtonText,
+                      activeTab === "loan"
+                        ? activeTheme.tabActiveText
+                        : activeTheme.tabInactiveText,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    🏠 Loan
+                  </Text>
+                </TouchableOpacity>
+              </ScrollView>
             </View>
           </View>
         </View>
@@ -201,6 +237,9 @@ export default function App() {
         </View>
         <View style={{ flex: 1, width: "100%", display: activeTab === "goal" ? "flex" : "none" }}>
           <GoalCalculatorScreen theme={theme} setTheme={setTheme} />
+        </View>
+        <View style={{ flex: 1, width: "100%", display: activeTab === "loan" ? "flex" : "none" }}>
+          <LoanCalculatorScreen theme={theme} setTheme={setTheme} />
         </View>
       </SafeAreaView>
     </SafeAreaProvider>

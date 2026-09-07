@@ -90,18 +90,36 @@ A powerful, high-precision **Trading Risk & Wealth Compounding Calculator** buil
 - 📊 **Year-by-Year Milestone Trajectory**: Table with annual deposit, cumulative outlay, compounding gains, and % Goal Achieved.
 - 📤 **Goal Plan Sharing & Export**: High-resolution PNG and Web Share export.
 
-### 7. 🎨 Premium Fintech UI & Responsive Layout
+### 7. 🏠 Loan, Prepayment & EMI vs. SIP Calculator
+- 📊 **Smart EMI & Amortization Engine**:
+  - Instant derivation of Monthly EMI, Total Principal, and Total Interest Payable.
+  - Principal vs. Interest visual distribution ratio bar.
+  - Curated Presets: 🏠 Home Loan (₹50L @ 8.5%, 20Y), 🚗 Car Loan (₹12L @ 9%, 5Y), 💼 Personal Loan (₹5L @ 12.5%, 3Y), 🎓 Education Loan (₹20L @ 10%, 8Y), and Custom.
+- ⚡ **Early Debt-Free Prepayment Simulator**:
+  - **1 Extra EMI per Year (13th Month Hack)**: Pay 1 extra EMI every 12 months to knock 3–5 years off a 20-year home loan and save ₹10L+ in interest!
+  - **Annual EMI Step-Up (+5%, +10%, +15% / yr)**: Scale monthly payments as income rises to finish a 20-year loan in just ~11 years.
+  - **Extra Monthly Prepayment**: Add small fixed amounts to monthly installments.
+  - **One-Time Lump Sum Prepayment**: Inject bonus or trading profit payouts at any milestone year.
+  - **Early Debt-Free Banner**: Real-time display of **Years Slashed Off Loan** and **Total Interest Saved in Cash**.
+- ⚖️ **Prepay Loan vs. Invest in SIP Arbitrage**:
+  - Evaluates whether to prepay the low-rate loan (guaranteed 8.5% interest saved) OR invest surplus funds into an Equity Mutual Fund / SIP (compounding at 12%–14%).
+  - Highlights exact **Net Wealth Advantage** in Rupees.
+- 📅 **Year-by-Year Amortization Schedule**:
+  - Table tracking Year, Opening Principal, Principal Repaid, Interest Paid, Closing Balance, and % Loan Cleared.
+- 📤 **Loan Strategy Sharing & Export**: High-resolution PNG and Web Share export.
+
+### 8. 🎨 Premium Fintech UI & Responsive Layout
 - 📱 **Universal Responsiveness**: Adaptive centered container (`maxWidth: 720px`) on desktop web displays with native full-window body scrolling (no nested inner scrollbars).
 - 🌓 **Obsidian Dark & Clean Slate Light Themes**: Deep `#090D16` dark mode and `#F8FAFC` light mode with translucent borders and elevated cards.
 - 🔒 **Data Validation & Protection**: Negative value checks, SL/Target bounds checking, and missing required field highlights.
-- 🗂️ **State-Preserving 6-Tab Bar**: Switch between Trading, SIP, SWP, Stock Average, Brokerage, and Goal Planner without losing entered state.
+- 🗂️ **State-Preserving 7-Tab Bar**: Smooth horizontal scrolling bar switching between Trading, SIP, SWP, Stock Average, Brokerage, Goal Planner, and Loan Calculator without losing entered state.
 
 ---
 
 ## 📂 Project Structure
 
 ```
-├── App.js                                 # Main shell, responsive container, top 6-tab navigation
+├── App.js                                 # Main shell, responsive container, top 7-tab navigation
 ├── src/
 │   ├── components/
 │   │   ├── CalculatorScreen.js            # Trading workstation (10-field engine, badge, ladder)
@@ -110,12 +128,14 @@ A powerful, high-precision **Trading Risk & Wealth Compounding Calculator** buil
 │   │   ├── StockAverageScreen.js          # Stock Averaging & Target Average Down planner
 │   │   ├── BrokerageCalculatorScreen.js   # Brokerage, Statutory Taxes & Net P&L workstation
 │   │   ├── GoalCalculatorScreen.js        # Goal-Based Wealth Planner (Reverse SIP / Lumpsum)
+│   │   ├── LoanCalculatorScreen.js        # Loan, Prepayment & EMI vs. SIP workstation
 │   │   ├── SipDonutChart.js               # SVG Donut investment vs. returns chart
 │   │   └── styles.js                      # Design system tokens (dark/light themes, cards, grid)
 │   └── utils/
 │       ├── averageCalculations.js         # Weighted average & target average down algorithms
 │       ├── brokerageCalculations.js       # Brokerage, STT, GST, SEBI, Exchange tax engine
 │       ├── goalCalculations.js            # Reverse SIP, Step-Up, Lumpsum & Goal engineering
+│       ├── loanCalculations.js            # EMI amortization, prepayment simulation & SIP arbitrage
 │       ├── sipCalculations.js             # Financial compounding, step-up & inflation algorithms
 │       └── swpCalculations.js             # Systematic withdrawal & corpus longevity algorithms
 ├── app.json                               # Expo app configuration

@@ -820,4 +820,67 @@ export default StyleSheet.create({
         height: "100%",
         borderRadius: 4,
     },
+
+    /* ── Loan & Prepayment Styles ── */
+    debtFreeCard: {
+        borderRadius: 14,
+        borderWidth: 1,
+        padding: 16,
+        marginBottom: 16,
+    },
+
+    debtFreeTitle: {
+        fontSize: 13,
+        fontWeight: "800",
+        letterSpacing: 0.3,
+        textTransform: "uppercase",
+    },
+
+    debtFreeMetricRow: {
+        flexDirection: "row",
+        gap: 16,
+        marginTop: 10,
+        flexWrap: "wrap",
+    },
+
+    debtFreeMetricCol: {
+        flex: 1,
+        minWidth: 140,
+    },
+
+    debtFreeValue: {
+        fontSize: 22,
+        fontWeight: "800",
+        marginTop: 2,
+    },
+
+    sipArbitrageCard: {
+        borderRadius: 14,
+        borderWidth: 1,
+        padding: 14,
+        marginBottom: 16,
+    },
+
+    prepayOptionCard: {
+        padding: 12,
+        borderRadius: 10,
+        borderWidth: 1,
+        marginBottom: 10,
+    },
+
+    prepayOptionHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+    },
+
+    prepayOptionTitle: {
+        fontSize: 12,
+        fontWeight: "700",
+    },
+
+    prepayOptionSubtitle: {
+        fontSize: 10,
+        marginTop: 2,
+    },
 });
