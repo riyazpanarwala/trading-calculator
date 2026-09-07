@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, Platform } from "react-native";
+import { View, Text, TouchableOpacity, Platform, ScrollView, StyleSheet } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import CalculatorScreen from "./src/components/CalculatorScreen";
@@ -10,7 +10,6 @@ import BrokerageCalculatorScreen from "./src/components/BrokerageCalculatorScree
 import GoalCalculatorScreen from "./src/components/GoalCalculatorScreen";
 import LoanCalculatorScreen from "./src/components/LoanCalculatorScreen";
 import styles, { lightTheme, darkTheme } from "./src/components/styles";
-import { ScrollView } from "react-native";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("trading");
@@ -48,13 +47,13 @@ export default function App() {
   }, [theme]);
 
   const appContent = (
-    <View style={[{ flex: 1 }, activeTheme.container]}>
+    <View style={StyleSheet.flatten([{ flex: 1 }, activeTheme.container])}>
       <StatusBar style={theme === "dark" ? "light" : "dark"} />
 
         {/* ── Top Navigation Tabs (Centered with maxWidth: 720, full-width parent) ── */}
         <View style={{ width: "100%", paddingHorizontal: 16, paddingTop: 12 }}>
           <View style={{ width: "100%", maxWidth: 720, alignSelf: "center" }}>
-            <View style={[styles.tabBar, activeTheme.tabBarBg, { borderColor: activeTheme.borderColor }]}>
+            <View style={StyleSheet.flatten([styles.tabBar, activeTheme.tabBarBg, { borderColor: activeTheme.borderColor }])}>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
