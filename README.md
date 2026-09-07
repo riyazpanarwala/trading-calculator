@@ -31,26 +31,53 @@ A powerful, high-precision **Trading Risk & Wealth Compounding Calculator** buil
 - 🍩 **SVG Donut Asset Breakdown**: Dynamic dual-arc visual breakdown showing Principal Invested vs. Compounded Wealth with compact currency notations (`₹ L / Cr`).
 - 📤 **SIP Plan Sharing & Export**: One-click sharing and screenshot export across Web, Android, and iOS.
 
-### 3. 🎨 Premium Fintech UI & Responsive Layout
+### 3. 🔄 Stock Average Calculator
+- 📊 **Multi-Batch Purchase Averaging**:
+  - Dynamically add up to 8 purchase lots (Price & Quantity per lot) with instant subtotal and weight calculation.
+  - Computes **New Weighted Average Price**, **Total Shares**, and **Total Capital Invested**.
+  - **Live P&L & Breakeven Tracking**: Enter optional Current Market Price (CMP) to track portfolio market value, net profit/loss (₹ and %), and distance needed to reach breakeven.
+  - **Visual Lot Allocation Bar**: Multi-colored proportional bar illustrating capital distribution across purchase batches.
+- 🎯 **Target Average Down Planner (What-If Reverse Planner)**:
+  - Enter Current Shares, Current Average Price, New Dip Buy Price, and Desired Target Average.
+  - Instantly computes **Exact Additional Shares to Buy** and **Additional Capital Required** to achieve the desired average.
+- 📤 **Average Setup Sharing & Export**: Instant screenshot export and sharing for WhatsApp, Twitter, and trade journals.
+
+### 4. 🏖️ Systematic Withdrawal Plan (SWP) Calculator
+- 💰 **Retirement Cashflow Modeling**:
+  - Model monthly pension/income withdrawals from an accumulated mutual fund/portfolio corpus.
+  - Interactive presets for Initial Corpus (`₹10L` to `₹1Cr`), Monthly Withdrawal (`₹20K` to `₹1L`), Return Rates, and Horizons (`5Y` to `30Y`).
+- 📈 **Annual Step-Up Withdrawal (+% / year)**: Increase withdrawals annually to hedge against inflation and rising retirement living expenses.
+- 🛡️ **Safe Withdrawal Rate & Longevity Analysis**:
+  - Identifies **Evergreen Portfolios** where compounding gains outpace withdrawals (corpus grows forever!).
+  - Detects exact **Corpus Depletion Horizon** (Years & Months) for aggressive withdrawal plans.
+  - Safe withdrawal rate benchmark badge (`≤6% Very Safe`, `6-9% Moderate`, `>9% High Risk`).
+- 📊 **Annual Cashflow & Balance Ledger**: Year-by-year milestone tracking of Opening Balance, Withdrawn, Compounded Returns, and Closing Balance.
+- 📤 **SWP Plan Sharing & Export**: Export high-resolution summary cards for retirement planning.
+
+### 5. 🎨 Premium Fintech UI & Responsive Layout
 - 📱 **Universal Responsiveness**: Adaptive centered container (`maxWidth: 720px`) on desktop web displays with native full-window body scrolling (no nested inner scrollbars).
 - 🌓 **Obsidian Dark & Clean Slate Light Themes**: Deep `#090D16` dark mode and `#F8FAFC` light mode with translucent borders and elevated cards.
 - 🔒 **Data Validation & Protection**: Negative value checks, SL/Target bounds checking, and missing required field highlights.
-- 🗂️ **State-Preserving Tab Bar**: Switch between Trading and Wealth calculators without losing any entered values.
+- 🗂️ **State-Preserving 4-Tab Bar**: Switch between Trading, SIP, SWP, and Stock Average calculators without losing any entered values.
 
 ---
 
 ## 📂 Project Structure
 
 ```
-├── App.js                                 # Main shell, responsive container, top tab navigation
+├── App.js                                 # Main shell, responsive container, top 4-tab navigation
 ├── src/
 │   ├── components/
 │   │   ├── CalculatorScreen.js            # Trading workstation (10-field engine, badge, ladder)
-│   │   ├── SipCalculatorScreen.js         # Wealth workstation (Regular SIP, SIP & Grow, Lumpsum)
+│   │   ├── SipCalculatorScreen.js         # Wealth workstation (Regular SIP, Step-Up, SIP & Grow, Lumpsum)
+│   │   ├── SwpCalculatorScreen.js         # Retirement & systematic withdrawal workstation
+│   │   ├── StockAverageScreen.js          # Stock Averaging & Target Average Down planner
 │   │   ├── SipDonutChart.js               # SVG Donut investment vs. returns chart
 │   │   └── styles.js                      # Design system tokens (dark/light themes, cards, grid)
 │   └── utils/
-│       └── sipCalculations.js             # Financial compounding algorithms & formatters
+│       ├── averageCalculations.js         # Weighted average & target average down algorithms
+│       ├── sipCalculations.js             # Financial compounding, step-up & inflation algorithms
+│       └── swpCalculations.js             # Systematic withdrawal & corpus longevity algorithms
 ├── app.json                               # Expo app configuration
 ├── eas.json                               # EAS Build & Hosting configuration
 └── package.json                           # Dependencies & scripts

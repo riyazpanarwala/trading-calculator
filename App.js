@@ -4,6 +4,8 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import CalculatorScreen from "./src/components/CalculatorScreen";
 import SipCalculatorScreen from "./src/components/SipCalculatorScreen";
+import SwpCalculatorScreen from "./src/components/SwpCalculatorScreen";
+import StockAverageScreen from "./src/components/StockAverageScreen";
 import styles, { lightTheme, darkTheme } from "./src/components/styles";
 
 export default function App() {
@@ -66,7 +68,7 @@ export default function App() {
                       : activeTheme.tabInactiveText,
                   ]}
                 >
-                  📈 Trading Calc
+                  📈 Trading
                 </Text>
               </TouchableOpacity>
 
@@ -86,7 +88,47 @@ export default function App() {
                       : activeTheme.tabInactiveText,
                   ]}
                 >
-                  💰 SIP Calc
+                  💰 SIP
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.tabButton,
+                  activeTab === "swp" ? activeTheme.tabActive : activeTheme.tabInactive,
+                ]}
+                onPress={() => setActiveTab("swp")}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={[
+                    styles.tabButtonText,
+                    activeTab === "swp"
+                      ? activeTheme.tabActiveText
+                      : activeTheme.tabInactiveText,
+                  ]}
+                >
+                  🏖️ SWP
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.tabButton,
+                  activeTab === "average" ? activeTheme.tabActive : activeTheme.tabInactive,
+                ]}
+                onPress={() => setActiveTab("average")}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={[
+                    styles.tabButtonText,
+                    activeTab === "average"
+                      ? activeTheme.tabActiveText
+                      : activeTheme.tabInactiveText,
+                  ]}
+                >
+                  🔄 Average
                 </Text>
               </TouchableOpacity>
             </View>
@@ -99,6 +141,12 @@ export default function App() {
         </View>
         <View style={{ flex: 1, width: "100%", display: activeTab === "sip" ? "flex" : "none" }}>
           <SipCalculatorScreen theme={theme} setTheme={setTheme} />
+        </View>
+        <View style={{ flex: 1, width: "100%", display: activeTab === "swp" ? "flex" : "none" }}>
+          <SwpCalculatorScreen theme={theme} setTheme={setTheme} />
+        </View>
+        <View style={{ flex: 1, width: "100%", display: activeTab === "average" ? "flex" : "none" }}>
+          <StockAverageScreen theme={theme} setTheme={setTheme} />
         </View>
       </SafeAreaView>
     </SafeAreaProvider>

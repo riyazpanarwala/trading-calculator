@@ -232,14 +232,15 @@ export default StyleSheet.create({
 
     tabButton: {
         flex: 1,
-        paddingVertical: 10,
+        paddingVertical: 9,
+        paddingHorizontal: 2,
         alignItems: "center",
         justifyContent: "center",
         borderRadius: 10,
     },
 
     tabButtonText: {
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: "700",
         letterSpacing: -0.2,
     },
@@ -470,5 +471,109 @@ export default StyleSheet.create({
     erosionBadgeText: {
         fontSize: 10,
         fontWeight: "700",
+    },
+
+    /* ── Stock Average Calculator Styles ── */
+    batchCard: {
+        borderRadius: 12,
+        borderWidth: 1,
+        padding: 12,
+        marginBottom: 12,
+    },
+
+    batchHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 10,
+    },
+
+    batchTitleRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+    },
+
+    batchBadge: {
+        paddingHorizontal: 7,
+        paddingVertical: 2,
+        borderRadius: 6,
+    },
+
+    batchBadgeText: {
+        fontSize: 11,
+        fontWeight: "700",
+    },
+
+    batchSubtotal: {
+        fontSize: 12,
+        fontWeight: "600",
+    },
+
+    batchRemoveBtn: {
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 6,
+    },
+
+    batchRemoveBtnText: {
+        fontSize: 12,
+        color: "#EF4444",
+        fontWeight: "700",
+    },
+
+    addBatchBtn: {
+        borderWidth: 1.5,
+        borderStyle: "dashed",
+        borderRadius: 12,
+        paddingVertical: 12,
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 16,
+    },
+
+    addBatchBtnText: {
+        fontSize: 13,
+        fontWeight: "700",
+        letterSpacing: -0.2,
+    },
+
+    distBarContainer: {
+        borderRadius: 12,
+        borderWidth: 1,
+        padding: 14,
+        marginBottom: 16,
+    },
+
+    distBar: {
+        height: 12,
+        borderRadius: 6,
+        overflow: "hidden",
+        flexDirection: "row",
+        marginVertical: 8,
+    },
+
+    distLegendRow: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 12,
+        marginTop: 6,
+    },
+
+    distLegendItem: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+    },
+
+    distDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+    },
+
+    distLegendText: {
+        fontSize: 11,
+        fontWeight: "600",
     },
 });
