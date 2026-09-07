@@ -40,7 +40,7 @@ export default function SipDonutChart({ totalInvested, estimatedReturns, maturit
                 {/* ── Donut Graphic ── */}
                 <View style={chartStyles.chartContainer}>
                     <Svg width={size} height={size}>
-                        <G rotation="-90" origin={`${center}, ${center}`}>
+                        <G transform={`rotate(-90 ${center} ${center})`}>
                             {/* Base Background Track */}
                             <Circle
                                 cx={center}

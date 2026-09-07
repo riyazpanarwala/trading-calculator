@@ -238,8 +238,8 @@ export default function BrokerageCalculatorScreen({ theme = "dark", setTheme }) 
                                 SELECT BROKER
                             </Text>
                             {isZeroBroker && (
-                                <View style={[styles.badgeHold, activeTheme.badgeHoldBg]}>
-                                    <Text style={[styles.badgeHoldText, activeTheme.badgeHoldText]}>
+                                <View style={[styles.badgeHold, { backgroundColor: activeTheme.badgeHoldBg }]}>
+                                    <Text style={[styles.badgeHoldText, { color: activeTheme.badgeHoldText }]}>
                                         ✨ True Zero Brokerage
                                     </Text>
                                 </View>

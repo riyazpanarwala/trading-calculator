@@ -415,6 +415,17 @@ export default StyleSheet.create({
         letterSpacing: 0.2,
     },
 
+    badgeHold: {
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 6,
+    },
+
+    badgeHoldText: {
+        fontSize: 11,
+        fontWeight: "700",
+    },
+
     inflationCard: {
         borderRadius: 14,
         borderWidth: 1,
