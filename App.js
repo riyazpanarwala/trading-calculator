@@ -47,10 +47,9 @@ export default function App() {
     }
   }, [theme]);
 
-  return (
-    <SafeAreaProvider edges={["top", "bottom"]}>
-      <SafeAreaView style={[{ flex: 1 }, activeTheme.container]}>
-        <StatusBar style={theme === "dark" ? "light" : "dark"} />
+  const appContent = (
+    <View style={[{ flex: 1 }, activeTheme.container]}>
+      <StatusBar style={theme === "dark" ? "light" : "dark"} />
 
         {/* ── Top Navigation Tabs (Centered with maxWidth: 720, full-width parent) ── */}
         <View style={{ width: "100%", paddingHorizontal: 16, paddingTop: 12 }}>
@@ -241,6 +240,17 @@ export default function App() {
         <View style={{ flex: 1, width: "100%", display: activeTab === "loan" ? "flex" : "none" }}>
           <LoanCalculatorScreen theme={theme} setTheme={setTheme} />
         </View>
+    </View>
+  );
+
+  if (Platform.OS === "web") {
+    return appContent;
+  }
+
+  return (
+    <SafeAreaProvider>
+      <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
+        {appContent}
       </SafeAreaView>
     </SafeAreaProvider>
   );
