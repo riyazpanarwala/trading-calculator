@@ -576,4 +576,248 @@ export default StyleSheet.create({
         fontSize: 11,
         fontWeight: "600",
     },
+
+    /* ── Brokerage Calculator Styles ── */
+    brokerGrid: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 8,
+        marginBottom: 16,
+    },
+
+    brokerCard: {
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 10,
+        borderWidth: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        minWidth: 90,
+    },
+
+    brokerNameText: {
+        fontSize: 12,
+        fontWeight: "700",
+        letterSpacing: -0.2,
+    },
+
+    brokerBadgeText: {
+        fontSize: 10,
+        fontWeight: "600",
+        marginTop: 2,
+    },
+
+    segmentRow: {
+        flexDirection: "row",
+        gap: 8,
+        flexWrap: "wrap",
+        marginBottom: 16,
+    },
+
+    segmentBtn: {
+        paddingVertical: 7,
+        paddingHorizontal: 12,
+        borderRadius: 10,
+        borderWidth: 1,
+    },
+
+    segmentBtnText: {
+        fontSize: 12,
+        fontWeight: "700",
+    },
+
+    quickLotRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+        flexWrap: "wrap",
+        marginTop: 6,
+    },
+
+    quickLotLabel: {
+        fontSize: 11,
+        fontWeight: "600",
+    },
+
+    quickLotChip: {
+        paddingVertical: 3,
+        paddingHorizontal: 8,
+        borderRadius: 6,
+        borderWidth: 1,
+    },
+
+    quickLotChipText: {
+        fontSize: 11,
+        fontWeight: "700",
+    },
+
+    breakevenCard: {
+        borderRadius: 12,
+        borderWidth: 1,
+        padding: 14,
+        marginBottom: 16,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        flexWrap: "wrap",
+        gap: 8,
+    },
+
+    taxTable: {
+        borderRadius: 14,
+        borderWidth: 1,
+        overflow: "hidden",
+        marginBottom: 16,
+    },
+
+    taxTableHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        borderBottomWidth: 1,
+    },
+
+    taxTableHeaderText: {
+        fontSize: 12,
+        fontWeight: "700",
+        letterSpacing: 0.3,
+        textTransform: "uppercase",
+    },
+
+    taxRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        paddingHorizontal: 14,
+        paddingVertical: 9,
+        borderBottomWidth: 1,
+    },
+
+    taxLabelCol: {
+        flex: 1,
+        paddingRight: 8,
+    },
+
+    taxName: {
+        fontSize: 12,
+        fontWeight: "600",
+    },
+
+    taxNote: {
+        fontSize: 10,
+        marginTop: 2,
+    },
+
+    taxValue: {
+        fontSize: 12,
+        fontWeight: "700",
+    },
+
+    taxTotalRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+    },
+
+    taxTotalLabel: {
+        fontSize: 13,
+        fontWeight: "800",
+    },
+
+    taxTotalValue: {
+        fontSize: 14,
+        fontWeight: "800",
+    },
+
+    zeroBadgeBanner: {
+        flexDirection: "row",
+        alignItems: "center",
+        padding: 12,
+        borderRadius: 12,
+        borderWidth: 1,
+        marginBottom: 16,
+        gap: 8,
+    },
+
+    /* ── Goal Planner Styles ── */
+    goalPresetGrid: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 8,
+        marginBottom: 14,
+    },
+
+    goalPresetBtn: {
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 10,
+        borderWidth: 1,
+        minWidth: 100,
+        flexGrow: 1,
+    },
+
+    goalPresetTitle: {
+        fontSize: 12,
+        fontWeight: "700",
+        letterSpacing: -0.2,
+    },
+
+    goalPresetSubtitle: {
+        fontSize: 10,
+        marginTop: 2,
+    },
+
+    goalStrategyRow: {
+        flexDirection: "row",
+        gap: 10,
+        marginBottom: 16,
+        flexWrap: "wrap",
+    },
+
+    goalStrategyCard: {
+        flex: 1,
+        minWidth: 200,
+        borderRadius: 14,
+        borderWidth: 1,
+        padding: 14,
+    },
+
+    goalStrategyBadge: {
+        alignSelf: "flex-start",
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 6,
+        marginBottom: 8,
+    },
+
+    goalStrategyBadgeText: {
+        fontSize: 10,
+        fontWeight: "700",
+    },
+
+    goalStrategyAmount: {
+        fontSize: 22,
+        fontWeight: "800",
+        letterSpacing: -0.5,
+    },
+
+    goalStrategySubtext: {
+        fontSize: 11,
+        marginTop: 4,
+    },
+
+    goalProgressBarContainer: {
+        height: 8,
+        borderRadius: 4,
+        overflow: "hidden",
+        marginVertical: 6,
+    },
+
+    goalProgressBarFill: {
+        height: "100%",
+        borderRadius: 4,
+    },
 });

@@ -6,6 +6,8 @@ import CalculatorScreen from "./src/components/CalculatorScreen";
 import SipCalculatorScreen from "./src/components/SipCalculatorScreen";
 import SwpCalculatorScreen from "./src/components/SwpCalculatorScreen";
 import StockAverageScreen from "./src/components/StockAverageScreen";
+import BrokerageCalculatorScreen from "./src/components/BrokerageCalculatorScreen";
+import GoalCalculatorScreen from "./src/components/GoalCalculatorScreen";
 import styles, { lightTheme, darkTheme } from "./src/components/styles";
 
 export default function App() {
@@ -67,6 +69,7 @@ export default function App() {
                       ? activeTheme.tabActiveText
                       : activeTheme.tabInactiveText,
                   ]}
+                  numberOfLines={1}
                 >
                   📈 Trading
                 </Text>
@@ -87,6 +90,7 @@ export default function App() {
                       ? activeTheme.tabActiveText
                       : activeTheme.tabInactiveText,
                   ]}
+                  numberOfLines={1}
                 >
                   💰 SIP
                 </Text>
@@ -107,6 +111,7 @@ export default function App() {
                       ? activeTheme.tabActiveText
                       : activeTheme.tabInactiveText,
                   ]}
+                  numberOfLines={1}
                 >
                   🏖️ SWP
                 </Text>
@@ -127,8 +132,51 @@ export default function App() {
                       ? activeTheme.tabActiveText
                       : activeTheme.tabInactiveText,
                   ]}
+                  numberOfLines={1}
                 >
                   🔄 Average
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.tabButton,
+                  activeTab === "brokerage" ? activeTheme.tabActive : activeTheme.tabInactive,
+                ]}
+                onPress={() => setActiveTab("brokerage")}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={[
+                    styles.tabButtonText,
+                    activeTab === "brokerage"
+                      ? activeTheme.tabActiveText
+                      : activeTheme.tabInactiveText,
+                  ]}
+                  numberOfLines={1}
+                >
+                  🏦 Brokerage
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.tabButton,
+                  activeTab === "goal" ? activeTheme.tabActive : activeTheme.tabInactive,
+                ]}
+                onPress={() => setActiveTab("goal")}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={[
+                    styles.tabButtonText,
+                    activeTab === "goal"
+                      ? activeTheme.tabActiveText
+                      : activeTheme.tabInactiveText,
+                  ]}
+                  numberOfLines={1}
+                >
+                  🎯 Goal
                 </Text>
               </TouchableOpacity>
             </View>
@@ -147,6 +195,12 @@ export default function App() {
         </View>
         <View style={{ flex: 1, width: "100%", display: activeTab === "average" ? "flex" : "none" }}>
           <StockAverageScreen theme={theme} setTheme={setTheme} />
+        </View>
+        <View style={{ flex: 1, width: "100%", display: activeTab === "brokerage" ? "flex" : "none" }}>
+          <BrokerageCalculatorScreen theme={theme} setTheme={setTheme} />
+        </View>
+        <View style={{ flex: 1, width: "100%", display: activeTab === "goal" ? "flex" : "none" }}>
+          <GoalCalculatorScreen theme={theme} setTheme={setTheme} />
         </View>
       </SafeAreaView>
     </SafeAreaProvider>

@@ -54,28 +54,68 @@ A powerful, high-precision **Trading Risk & Wealth Compounding Calculator** buil
 - 📊 **Annual Cashflow & Balance Ledger**: Year-by-year milestone tracking of Opening Balance, Withdrawn, Compounded Returns, and Closing Balance.
 - 📤 **SWP Plan Sharing & Export**: Export high-resolution summary cards for retirement planning.
 
-### 5. 🎨 Premium Fintech UI & Responsive Layout
+### 5. 🏦 Brokerage, Statutory Taxes & Net P&L Calculator
+- 🏢 **Multi-Broker Architecture with Dedicated Zero-Brokerage Support**:
+  - **Shoonya (Finvasia)**: True ₹0 brokerage on F&O options, futures, and delivery.
+  - **FlatTrade**: True ₹0 brokerage across all segments.
+  - **Religare Broking**: Tailored for stock buying/delivery with configurable rate input (default `0.25%`).
+  - **Upstox**: Flat ₹20 / 0.05% intraday & F&O, 2.5% delivery.
+  - **Zerodha**, **Groww**, **Angel One**: Standard discount broker structures (₹0 delivery / flat ₹20 F&O).
+  - **Custom Broker**: Fully custom user-defined percentage or flat fee per leg.
+- 🎯 **Four Comprehensive Market Segments**:
+  - `🎯 Options (F&O)`: STT (0.1% on sell premium), NSE transaction charges (0.03503% on premium), Stamp duty (0.003% on buy), GST (18%).
+  - `📦 Stock Delivery`: Dual STT (0.1% buy + 0.1% sell), DP charges (₹15.93 flat CDSL/NSDL on sell), Stamp duty (0.015% on buy).
+  - `⚡ Intraday`: STT (0.025% on sell), NSE transaction (0.00297%), Stamp duty (0.003% on buy).
+  - `📈 Futures (F&O)`: STT (0.02% on sell), NSE transaction (0.00173%), Stamp duty (0.002% on buy).
+- 🏷️ **Zero-Brokerage Savings Badge**: Displays exact savings in cash + GST (₹47.20/trade) achieved using Shoonya or FlatTrade compared to standard ₹20 discount brokers.
+- 🎯 **Breakeven Indicator**: Computes exact minimum price move points and target sell price needed just to break even after statutory taxes.
+- 📑 **Itemized Statutory Tax Ledger**: Clear line-item ledger showing Brokerage, STT/CTT, Exchange Txn, GST, SEBI Turnover (₹10/Cr), Stamp Duty, and DP charges.
+- ⚡ **Quick Lot Presets**: One-tap lot sizing for Nifty (25, 75), BankNifty (15, 30), Sensex (10), and equity share lots (50, 100, 500, 1000).
+
+### 6. 🎯 Goal-Based Wealth Planner (Reverse SIP & Lumpsum)
+- 🔄 **Reverse Financial Engineering**: Solves *"How much do I need to invest each month to accumulate ₹X in Y years at Z% return?"*
+- 🎯 **Life-Stage Goal Presets**:
+  - 🚗 `New Car` (₹15L in 4Y @ 10%)
+  - 🎓 `Child Higher Education` (₹35L in 12Y @ 12%)
+  - 🏡 `Home Downpayment` (₹60L in 7Y @ 12%)
+  - 🏖️ `FIRE Retirement` (₹3 Cr in 18Y @ 13%)
+  - 💍 `Wedding / Milestone` (₹25L in 5Y @ 11%)
+  - 🎯 `Custom Goal Target`
+- ⚖️ **Three Route Solution Comparison**:
+  - **Fixed Regular SIP**: Constant monthly installment for full horizon.
+  - **Step-Up Monthly SIP**: Lower starting investment today (+5%, +10%, +15% annual step-up with salary raises).
+  - **One-Time Lumpsum**: Single upfront capital allocation compounding untouched to the target.
+- 🎈 **Inflation-Adjusted Future Goal Cost**: Accurately computes future inflated target corpus (e.g. ₹50 Lakhs today will cost ₹89.54 Lakhs in 10 years at 6% inflation).
+- 💼 **Existing Savings Compounding Offset**: Factors in current savings already accumulated, compounding them forward to reduce new monthly SIP burden.
+- 📊 **Year-by-Year Milestone Trajectory**: Table with annual deposit, cumulative outlay, compounding gains, and % Goal Achieved.
+- 📤 **Goal Plan Sharing & Export**: High-resolution PNG and Web Share export.
+
+### 7. 🎨 Premium Fintech UI & Responsive Layout
 - 📱 **Universal Responsiveness**: Adaptive centered container (`maxWidth: 720px`) on desktop web displays with native full-window body scrolling (no nested inner scrollbars).
 - 🌓 **Obsidian Dark & Clean Slate Light Themes**: Deep `#090D16` dark mode and `#F8FAFC` light mode with translucent borders and elevated cards.
 - 🔒 **Data Validation & Protection**: Negative value checks, SL/Target bounds checking, and missing required field highlights.
-- 🗂️ **State-Preserving 4-Tab Bar**: Switch between Trading, SIP, SWP, and Stock Average calculators without losing any entered values.
+- 🗂️ **State-Preserving 6-Tab Bar**: Switch between Trading, SIP, SWP, Stock Average, Brokerage, and Goal Planner without losing entered state.
 
 ---
 
 ## 📂 Project Structure
 
 ```
-├── App.js                                 # Main shell, responsive container, top 4-tab navigation
+├── App.js                                 # Main shell, responsive container, top 6-tab navigation
 ├── src/
 │   ├── components/
 │   │   ├── CalculatorScreen.js            # Trading workstation (10-field engine, badge, ladder)
 │   │   ├── SipCalculatorScreen.js         # Wealth workstation (Regular SIP, Step-Up, SIP & Grow, Lumpsum)
 │   │   ├── SwpCalculatorScreen.js         # Retirement & systematic withdrawal workstation
 │   │   ├── StockAverageScreen.js          # Stock Averaging & Target Average Down planner
+│   │   ├── BrokerageCalculatorScreen.js   # Brokerage, Statutory Taxes & Net P&L workstation
+│   │   ├── GoalCalculatorScreen.js        # Goal-Based Wealth Planner (Reverse SIP / Lumpsum)
 │   │   ├── SipDonutChart.js               # SVG Donut investment vs. returns chart
 │   │   └── styles.js                      # Design system tokens (dark/light themes, cards, grid)
 │   └── utils/
 │       ├── averageCalculations.js         # Weighted average & target average down algorithms
+│       ├── brokerageCalculations.js       # Brokerage, STT, GST, SEBI, Exchange tax engine
+│       ├── goalCalculations.js            # Reverse SIP, Step-Up, Lumpsum & Goal engineering
 │       ├── sipCalculations.js             # Financial compounding, step-up & inflation algorithms
 │       └── swpCalculations.js             # Systematic withdrawal & corpus longevity algorithms
 ├── app.json                               # Expo app configuration
