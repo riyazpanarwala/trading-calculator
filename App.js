@@ -9,6 +9,8 @@ import StockAverageScreen from "./src/components/StockAverageScreen";
 import BrokerageCalculatorScreen from "./src/components/BrokerageCalculatorScreen";
 import GoalCalculatorScreen from "./src/components/GoalCalculatorScreen";
 import LoanCalculatorScreen from "./src/components/LoanCalculatorScreen";
+import OptionGreeksScreen from "./src/components/OptionGreeksScreen";
+import FireCalculatorScreen from "./src/components/FireCalculatorScreen";
 import styles, { lightTheme, darkTheme } from "./src/components/styles";
 
 export default function App() {
@@ -78,6 +80,28 @@ export default function App() {
                     numberOfLines={1}
                   >
                     📈 Trading
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.tabButton,
+                    activeTab === "greeks" ? activeTheme.tabActive : activeTheme.tabInactive,
+                    { paddingHorizontal: 10, minWidth: 70 },
+                  ]}
+                  onPress={() => setActiveTab("greeks")}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[
+                      styles.tabButtonText,
+                      activeTab === "greeks"
+                        ? activeTheme.tabActiveText
+                        : activeTheme.tabInactiveText,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    ⚡ Greeks
                   </Text>
                 </TouchableOpacity>
 
@@ -212,6 +236,28 @@ export default function App() {
                     🏠 Loan
                   </Text>
                 </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.tabButton,
+                    activeTab === "fire" ? activeTheme.tabActive : activeTheme.tabInactive,
+                    { paddingHorizontal: 10, minWidth: 70 },
+                  ]}
+                  onPress={() => setActiveTab("fire")}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[
+                      styles.tabButtonText,
+                      activeTab === "fire"
+                        ? activeTheme.tabActiveText
+                        : activeTheme.tabInactiveText,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    🔥 FIRE
+                  </Text>
+                </TouchableOpacity>
               </ScrollView>
             </View>
           </View>
@@ -220,6 +266,9 @@ export default function App() {
         {/* ── Screens: FULL WIDTH (width: '100%') so ScrollView spans to browser window edges ── */}
         <View style={{ flex: 1, width: "100%", display: activeTab === "trading" ? "flex" : "none" }}>
           <CalculatorScreen theme={theme} setTheme={setTheme} />
+        </View>
+        <View style={{ flex: 1, width: "100%", display: activeTab === "greeks" ? "flex" : "none" }}>
+          <OptionGreeksScreen theme={theme} setTheme={setTheme} />
         </View>
         <View style={{ flex: 1, width: "100%", display: activeTab === "sip" ? "flex" : "none" }}>
           <SipCalculatorScreen theme={theme} setTheme={setTheme} />
@@ -238,6 +287,9 @@ export default function App() {
         </View>
         <View style={{ flex: 1, width: "100%", display: activeTab === "loan" ? "flex" : "none" }}>
           <LoanCalculatorScreen theme={theme} setTheme={setTheme} />
+        </View>
+        <View style={{ flex: 1, width: "100%", display: activeTab === "fire" ? "flex" : "none" }}>
+          <FireCalculatorScreen theme={theme} setTheme={setTheme} />
         </View>
     </View>
   );

@@ -20,7 +20,25 @@ A powerful, high-precision **Trading Risk & Wealth Compounding Calculator** buil
 
 ---
 
-### 2. 💰 Wealth Compounding & SIP Calculator
+### 2. ⚡ Options Black-Scholes & Greeks Calculator
+- 🏛️ **Black-Scholes Mathematical Pricing Engine**:
+  - High-precision theoretical European Call & Put option price derivation.
+  - Breakdown of Intrinsic Value vs. Time Value and Moneyness (`ATM`, `ITM`, `OTM`).
+- 🟢 **The 5 Option Greeks Dashboard**:
+  - 🟢 **Delta ($\Delta$)**: Directional sensitivity per +1 point spot move (Call Delta $0 \dots +1.0$, Put Delta $-1.0 \dots 0$).
+  - ⚡ **Gamma ($\Gamma$)**: Speed / acceleration of Delta per +1 point spot move.
+  - ⏰ **Theta ($\Theta$)**: Daily time decay loss ($\text{₹}/\text{day}$ calendar day loss).
+  - 🌊 **Vega ($\nu$)**: Sensitivity to +1% change in Implied Volatility (India VIX).
+  - 🏛️ **Rho ($\rho$)**: Sensitivity to +1% change in risk-free interest rates.
+- 🔍 **Implied Volatility (IV) Reverse Newton-Raphson Solver**:
+  - Enter current market traded option price to solve for exact Implied Volatility ($IV\%$) implied by the market.
+- 🔮 **What-If Scenario Projection Simulator**:
+  - Simulate projected Call & Put prices and net P&L ($\text{₹}$ and $\%$) after spot move, days elapsed, and IV changes.
+- ⚡ **Quick Index & Stock Presets**: One-tap presets for Nifty 24,500, BankNifty 52,000, Sensex 80,000, and stock options.
+
+---
+
+### 3. 💰 Wealth Compounding & SIP Calculator
 - 📅 **Three Flexible Investment Modes**:
   - **Regular Monthly SIP**: Standard recurring monthly investments over the selected time horizon.
   - **🌱 SIP & Grow (Stop SIP & Hold)**: Invest monthly for a set period (e.g., 5 years), then stop contributing while your accumulated corpus remains invested and compounds untouched until your target horizon (e.g., 20 years).
@@ -41,7 +59,7 @@ A powerful, high-precision **Trading Risk & Wealth Compounding Calculator** buil
 
 ---
 
-### 3. 🔄 Stock Average Calculator
+### 4. 🔄 Stock Average Calculator
 - 📊 **Multi-Batch Purchase & Partial Exit Averaging**:
   - Dynamically add up to 8 purchase lots or sell transactions (Price, Quantity, Buy/Sell type).
   - Computes **New Weighted Average Price**, **Total Shares**, and **Total Capital Invested**.
@@ -55,7 +73,7 @@ A powerful, high-precision **Trading Risk & Wealth Compounding Calculator** buil
 
 ---
 
-### 4. 🏖️ Systematic Withdrawal Plan (SWP) Retirement Calculator
+### 5. 🏖️ Systematic Withdrawal Plan (SWP) Retirement Calculator
 - 💰 **Retirement Cashflow Modeling**:
   - Model monthly pension/income withdrawals from an accumulated mutual fund/portfolio corpus.
   - Interactive presets for Initial Corpus (`₹10L` to `₹1Cr`), Monthly Withdrawal (`₹20K` to `₹1L`), Return Rates, and Horizons (`5Y` to `30Y`).
@@ -77,7 +95,7 @@ A powerful, high-precision **Trading Risk & Wealth Compounding Calculator** buil
 
 ---
 
-### 5. 🏦 Brokerage, Statutory Taxes & Net P&L Calculator
+### 6. 🏦 Brokerage, Statutory Taxes & Net P&L Calculator
 - 🏢 **Multi-Broker Architecture with Dedicated Zero-Brokerage Support**:
   - **Shoonya (Finvasia)**: True ₹0 brokerage on F&O options, futures, and delivery.
   - **FlatTrade**: True ₹0 brokerage across all segments.
@@ -99,7 +117,7 @@ A powerful, high-precision **Trading Risk & Wealth Compounding Calculator** buil
 
 ---
 
-### 6. 🎯 Goal-Based Wealth Planner (Reverse SIP & Lumpsum)
+### 7. 🎯 Goal-Based Wealth Planner (Reverse SIP & Lumpsum)
 - 🔄 **Reverse Financial Engineering**: Solves *"How much do I need to invest each month to accumulate ₹X in Y years at Z% return?"*
 - 🛡️ **Duration-Based Asset Allocation Strategy**:
   - Recommends risk-adjusted asset splits based on goal horizon:
@@ -124,7 +142,7 @@ A powerful, high-precision **Trading Risk & Wealth Compounding Calculator** buil
 
 ---
 
-### 7. 🏠 Loan, Prepayment & EMI vs. SIP Calculator
+### 8. 🏠 Loan, Prepayment & EMI vs. SIP Calculator
 - 📊 **Smart EMI & Amortization Engine**:
   - Instant derivation of Monthly EMI, Total Principal, and Total Interest Payable.
   - Principal vs. Interest visual distribution ratio bar.
@@ -147,33 +165,57 @@ A powerful, high-precision **Trading Risk & Wealth Compounding Calculator** buil
 
 ---
 
-### 8. 🎨 Premium Fintech UI & Responsive Layout
+### 9. 🏖️ Wealth, FIRE & Returns Calculator
+- 🔥 **FIRE Retirement Target Corpus & Multi-Tier Benchmarks**:
+  - Computes future inflation-adjusted annual expenses at target retirement age.
+  - Calculates target FIRE corpus using standard safe withdrawal rate multipliers:
+    - ⚡ **Lean FIRE (25x / 4% SWR)**: Essential lifestyle coverage.
+    - 🎯 **Standard FIRE (25x / 4% SWR)**: Full baseline living expense coverage.
+    - 💎 **Fat FIRE (30x / 3.33% SWR)**: Luxurious, cushion-heavy retirement.
+    - 🏝️ **Coast FIRE**: Required current corpus to compound untouched to full target by retirement age without adding another rupee!
+- 📈 **Age-Timeline Milestone Ledger**:
+  - Year-by-year milestone table tracking Age, Total Corpus, Annual Contributions, Compound Returns, and Real Inflation-Adjusted Wealth.
+- 📊 **CAGR (Compound Annual Growth Rate) Calculator**:
+  - Calculates annualized growth rate: $\text{CAGR} = \left(\frac{\text{Final}}{\text{Initial}}\right)^{\frac{1}{\text{Years}}} - 1$.
+  - Computes Absolute Return %, Total Wealth Multiplier ($X$), and Net Profit.
+- 🔮 **Multi-Date Portfolio XIRR Newton-Raphson Engine**:
+  - Precision Extended Internal Rate of Return solver for irregular multi-date investments and redemptions.
+  - Dynamically add/remove cashflow rows with positive (inflows/final valuation) and negative (outflows/investments) amounts.
+- 📤 **FIRE Plan Sharing & Export**: High-resolution screenshot export for wealth planning journal logs.
+
+---
+
+### 10. 🎨 Premium Fintech UI & Responsive Layout
 - 📱 **Universal Responsiveness**: Adaptive centered container (`maxWidth: 720px`) on desktop web displays with native full-window body scrolling (no nested inner scrollbars).
 - 🌓 **Obsidian Dark & Clean Slate Light Themes**: Deep `#090D16` dark mode and `#F8FAFC` light mode with translucent borders and elevated cards.
 - 🔒 **Data Validation & Protection**: Negative value checks, SL/Target bounds checking, and missing required field highlights.
-- 🗂️ **State-Preserving 7-Tab Bar**: Smooth horizontal scrolling bar switching between Trading, SIP, SWP, Stock Average, Brokerage, Goal Planner, and Loan Calculator without losing entered state.
+- 🗂️ **State-Preserving 9-Tab Bar**: Smooth horizontal scrolling bar switching between Trading, Greeks, SIP, SWP, Stock Average, Brokerage, Goal Planner, Loan, and FIRE Calculator without losing entered state.
 
 ---
 
 ## 📂 Project Structure
 
 ```
-├── App.js                                 # Main shell, responsive container, top 7-tab navigation
+├── App.js                                 # Main shell, responsive container, top 9-tab navigation
 ├── src/
 │   ├── components/
 │   │   ├── CalculatorScreen.js            # Trading workstation (10-field engine, badge, ladder)
+│   │   ├── OptionGreeksScreen.js          # Options Black-Scholes & 5 Greeks workstation
 │   │   ├── SipCalculatorScreen.js         # Wealth workstation (LTCG Tax, Step-Up Frequency, Multi-Scenario)
 │   │   ├── SwpCalculatorScreen.js         # Retirement workstation (Redemption Tax, Inflation, SORR Simulator)
 │   │   ├── StockAverageScreen.js          # Stock Averaging (Buy/Sell batches, Realized P&L, Dividends offset)
 │   │   ├── BrokerageCalculatorScreen.js   # Brokerage, Statutory Taxes (F&O, Delivery, CDS, MCX, Multi-Leg)
 │   │   ├── GoalCalculatorScreen.js        # Goal Planner (Asset Allocation Strategy & Multi-Goal Aggregator)
 │   │   ├── LoanCalculatorScreen.js        # Loan workstation (Rate Hike Simulator, Balance Transfer, Prepayment)
+│   │   ├── FireCalculatorScreen.js        # FIRE & Returns workstation (Lean/Fat/Coast FIRE, CAGR, XIRR solver)
 │   │   ├── SipDonutChart.js               # SVG Donut investment vs. returns chart
 │   │   └── styles.js                      # Design system tokens (dark/light themes, cards, grid)
 │   └── utils/
 │       ├── averageCalculations.js         # Weighted average, buy/sell realized P&L & dividend offset
 │       ├── brokerageCalculations.js       # Brokerage, STT, CTT, GST, SEBI, CDS & MCX tax engine
+│       ├── fireCalculations.js            # FIRE target corpus, Coast FIRE, CAGR & Newton-Raphson XIRR solver
 │       ├── goalCalculations.js            # Reverse SIP, Step-Up, Asset Allocation & Multi-Goal aggregator
+│       ├── greeksCalculations.js          # Black-Scholes option fair value, 5 Greeks, IV solver & What-If scenario
 │       ├── loanCalculations.js            # EMI amortization, rate revision, balance transfer & SIP arbitrage
 │       ├── sipCalculations.js             # Financial compounding, LTCG tax, step-up & multi-scenarios
 │       └── swpCalculations.js             # SWP redemption tax, SORR crash simulator & inflation algorithms
@@ -217,15 +259,6 @@ Make sure you have the following installed:
    - **iOS Simulator:** Press `i` (macOS only)
    - **Android Emulator:** Press `a`
    - **Mobile Device:** Scan the QR code using Expo Go app (Android) or Camera app (iOS)
-
----
-
-## 🚀 Deployment
-
-- **Deploying to Expo Web:**
-  ```bash
-  npx expo export
-  ```
 
 ---
 
