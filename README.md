@@ -282,19 +282,23 @@ This repository includes full automated CI/CD pipelines configured with GitHub A
 
 #### ⚡ How to Release a New APK:
 
-**Option A — One-Click Batch Script (Windows):**
-Simply double-click [`release-tag.bat`](./release-tag.bat):
-1. It displays your recent release tags.
-2. Enter your desired version number (e.g., `1.0.10` or `v1.0.10`).
-3. Press `Enter` and confirm `Y` — the script automatically creates the tag and pushes it to GitHub to trigger the release!
+**Option A — Automatic Version Increment (Batch file or NPM):**
+Double-click [`release-tag.bat`](./release-tag.bat) (or run `npm run release` in terminal):
+1. It automatically fetches the latest tags from GitHub and detects the current version (e.g. `v1.0.9`).
+2. It prompts you to select your bump type:
+   - `[1] Patch` (e.g. `v1.0.10`) — Bug fixes & minor tweaks *(Default)*
+   - `[2] Minor` (e.g. `v1.1.0`) — New features & enhancements
+   - `[3] Major` (e.g. `v2.0.0`) — Major overhaul or breaking change
+   - `[4] Custom` — Enter any specific version manually
+3. Press `Enter` to confirm, and it will automatically tag and push to GitHub to trigger the release!
 
-**Option B — Terminal (Git Tag):**
+**Option B — Manual Git Tag:**
 ```bash
 git tag v1.0.10
 git push origin v1.0.10
 ```
 
-**Option C — GitHub Web UI:**
+**Option C — GitHub Actions Web UI:**
 Go to **Actions** > **Release Android APK** > **Run workflow**.
 
 ---

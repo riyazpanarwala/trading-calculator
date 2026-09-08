@@ -15,7 +15,8 @@
     "build:web": "npx expo export --platform web",
     "submit:android": "eas submit --platform android --profile production",
     "deploy": "npx expo export --platform web && eas deploy --prod",
-    "deploy:preview": "npx expo export --platform web && eas deploy"
+    "deploy:preview": "npx expo export --platform web && eas deploy",
+    "release": "node scripts/release-tag.js"
   },
   "dependencies": {
     "expo": "~54.0.37",
