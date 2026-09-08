@@ -219,6 +219,12 @@ A powerful, high-precision **Trading Risk & Wealth Compounding Calculator** buil
 │       ├── loanCalculations.js            # EMI amortization, rate revision, balance transfer & SIP arbitrage
 │       ├── sipCalculations.js             # Financial compounding, LTCG tax, step-up & multi-scenarios
 │       └── swpCalculations.js             # SWP redemption tax, SORR crash simulator & inflation algorithms
+├── .github/
+│   └── workflows/
+│       ├── deploy-web.yml                 # Automated EAS Hosting web deployment workflow
+│       └── release-apk.yml                # Automated EAS APK build & GitHub Release workflow
+├── .node-version                          # Pinned Node.js version (Node 24)
+├── release-tag.bat                        # One-click Windows batch script for creating and pushing release tags
 ├── app.json                               # Expo app configuration
 ├── eas.json                               # EAS Build & Hosting configuration
 ├── package.json                           # Dependencies & scripts
@@ -230,7 +236,7 @@ A powerful, high-precision **Trading Risk & Wealth Compounding Calculator** buil
 ## 🛠 Prerequisites
 
 Make sure you have the following installed:
-- [Node.js](https://nodejs.org/) (v16 or higher recommended)
+- [Node.js](https://nodejs.org/) (v24 recommended; pinned in `.node-version`)
 - npm or yarn
 - [Expo CLI](https://docs.expo.dev/get-started/installation/) (`npm install -g expo-cli`)
 
@@ -259,6 +265,37 @@ Make sure you have the following installed:
    - **iOS Simulator:** Press `i` (macOS only)
    - **Android Emulator:** Press `a`
    - **Mobile Device:** Scan the QR code using Expo Go app (Android) or Camera app (iOS)
+
+---
+
+## 🚀 Automated CI/CD & Releases (GitHub Actions)
+
+This repository includes full automated CI/CD pipelines configured with GitHub Actions.
+
+### 🌐 1. Automated Web Deployment (`deploy-web.yml`)
+- **Trigger**: Every push to the `main` branch (or manual trigger from the GitHub Actions tab).
+- **Action**: Automatically runs `npx expo export --platform web` and deploys the production bundle to EAS Hosting ([https://riyaz-trading-calc.expo.app/](https://riyaz-trading-calc.expo.app/)).
+
+### 📱 2. Automated APK Release (`release-apk.yml`)
+- **Trigger**: Pushing any version tag starting with `v` (e.g., `v1.0.10`) or triggering manually from GitHub.
+- **Action**: Triggers EAS Cloud to build the standalone Android APK (`--profile apk`), downloads the resulting binary, and publishes a new **GitHub Release** with the `.apk` file attached for instant user download.
+
+#### ⚡ How to Release a New APK:
+
+**Option A — One-Click Batch Script (Windows):**
+Simply double-click [`release-tag.bat`](./release-tag.bat):
+1. It displays your recent release tags.
+2. Enter your desired version number (e.g., `1.0.10` or `v1.0.10`).
+3. Press `Enter` and confirm `Y` — the script automatically creates the tag and pushes it to GitHub to trigger the release!
+
+**Option B — Terminal (Git Tag):**
+```bash
+git tag v1.0.10
+git push origin v1.0.10
+```
+
+**Option C — GitHub Web UI:**
+Go to **Actions** > **Release Android APK** > **Run workflow**.
 
 ---
 
