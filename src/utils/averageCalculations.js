@@ -1,5 +1,5 @@
 /**
- * Stock Averaging and Target Average Down financial calculation utilities
+ * Stock Averaging, Partial Exit P&L and Target Average Down Financial Utilities
  */
 
 /**
@@ -13,45 +13,65 @@ export function formatCurrency(value, currencySymbol = "₹") {
     const formatted = Math.abs(value) >= 10000
         ? Number(value.toFixed(2)).toLocaleString("en-IN", { maximumFractionDigits: 2 })
         : Number(value.toFixed(2)).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    return `${currencySymbol} ${formatted}`;
+    return `${value < 0 ? "−" : ""}${currencySymbol} ${formatted}`;
 }
 
 /**
- * Calculate multi-batch stock purchase average and live P&L
+ * Calculate multi-batch stock purchase/sell averaging, realized P&L, and dividend breakeven offset
  *
- * @param {Array<{ price: string|number, quantity: string|number }>} batches
+ * @param {Array<{ price: string|number, quantity: string|number, type?: 'BUY'|'SELL', date?: string }>} batches
  * @param {string|number} [currentMarketPrice]
+ * @param {string|number} [totalDividends=0]
  * @returns {Object}
  */
-export function calculateStockAverage(batches = [], currentMarketPrice = null) {
+export function calculateStockAverage(batches = [], currentMarketPrice = null, totalDividends = 0) {
     let totalQuantity = 0;
     let totalInvested = 0;
+    let realizedPnl = 0;
     const validBatches = [];
+
+    const divs = Math.max(0, parseFloat(totalDividends) || 0);
 
     batches.forEach((b, idx) => {
         const p = parseFloat(b.price);
         const q = parseFloat(b.quantity);
+        const type = (b.type || "BUY").toUpperCase();
 
         if (!isNaN(p) && p > 0 && !isNaN(q) && q > 0) {
             const lotCost = p * q;
-            totalQuantity += q;
-            totalInvested += lotCost;
+
+            if (type === "BUY") {
+                totalQuantity += q;
+                totalInvested += lotCost;
+            } else if (type === "SELL") {
+                const currentAvgCost = totalQuantity > 0 ? totalInvested / totalQuantity : p;
+                const lotRealized = (p - currentAvgCost) * q;
+                realizedPnl += lotRealized;
+
+                const soldCost = currentAvgCost * q;
+                totalQuantity = Math.max(0, totalQuantity - q);
+                totalInvested = Math.max(0, totalInvested - soldCost);
+            }
 
             validBatches.push({
                 index: idx + 1,
                 price: p,
                 quantity: q,
+                type,
+                date: b.date || "",
                 cost: lotCost,
             });
         }
     });
 
-    if (totalQuantity <= 0 || totalInvested <= 0) {
+    if (totalQuantity <= 0 && validBatches.length === 0) {
         return {
             isValid: false,
             totalQuantity: 0,
             totalInvested: 0,
             averagePrice: 0,
+            realizedPnl: 0,
+            effectiveBreakevenPrice: 0,
             validBatches: [],
             cmp: null,
             currentValue: null,
@@ -62,7 +82,9 @@ export function calculateStockAverage(batches = [], currentMarketPrice = null) {
         };
     }
 
-    const averagePrice = totalInvested / totalQuantity;
+    const averagePrice = totalQuantity > 0 ? totalInvested / totalQuantity : 0;
+    const netCostAfterDividends = Math.max(0, totalInvested - divs);
+    const effectiveBreakevenPrice = totalQuantity > 0 ? netCostAfterDividends / totalQuantity : 0;
 
     // Attach weighting to each valid batch
     const batchesWithWeights = validBatches.map((b) => ({
@@ -81,17 +103,17 @@ export function calculateStockAverage(batches = [], currentMarketPrice = null) {
         breakevenDistancePercent: null,
     };
 
-    if (!isNaN(cmp) && cmp > 0) {
+    if (!isNaN(cmp) && cmp > 0 && totalQuantity > 0) {
         const currentValue = totalQuantity * cmp;
-        const pnl = currentValue - totalInvested;
-        const pnlPercent = (pnl / totalInvested) * 100;
+        const unrealizedPnl = currentValue - totalInvested;
+        const pnlPercent = totalInvested > 0 ? (unrealizedPnl / totalInvested) * 100 : 0;
         const breakevenDistance = averagePrice - cmp;
         const breakevenDistancePercent = (breakevenDistance / cmp) * 100;
 
         cmpData = {
             cmp,
             currentValue: Math.round(currentValue * 100) / 100,
-            pnl: Math.round(pnl * 100) / 100,
+            pnl: Math.round(unrealizedPnl * 100) / 100,
             pnlPercent: Math.round(pnlPercent * 100) / 100,
             breakevenDistance: Math.round(breakevenDistance * 100) / 100,
             breakevenDistancePercent: Math.round(breakevenDistancePercent * 100) / 100,
@@ -103,6 +125,9 @@ export function calculateStockAverage(batches = [], currentMarketPrice = null) {
         totalQuantity,
         totalInvested: Math.round(totalInvested * 100) / 100,
         averagePrice: Math.round(averagePrice * 100) / 100,
+        realizedPnl: Math.round(realizedPnl * 100) / 100,
+        totalDividends: Math.round(divs * 100) / 100,
+        effectiveBreakevenPrice: Math.round(effectiveBreakevenPrice * 100) / 100,
         validBatches: batchesWithWeights,
         ...cmpData,
     };
@@ -110,15 +135,6 @@ export function calculateStockAverage(batches = [], currentMarketPrice = null) {
 
 /**
  * Calculate Target Average Down requirements
- * Formula:
- *   Q2 = Q1 * (P1 - P_target) / (P_target - P2)
- *
- * @param {Object} params
- * @param {string|number} params.currentShares - Q1
- * @param {string|number} params.currentAvgPrice - P1
- * @param {string|number} params.newBuyPrice - P2 (must be < P_target < P1)
- * @param {string|number} params.targetAvgPrice - P_target
- * @returns {Object}
  */
 export function calculateTargetAverage({
     currentShares,
@@ -147,7 +163,6 @@ export function calculateTargetAverage({
         };
     }
 
-    // Validation for Averaging DOWN
     if (p2 >= p1) {
         return {
             isValid: false,
@@ -181,9 +196,7 @@ export function calculateTargetAverage({
         };
     }
 
-    // Exact formula: Q2 = Q1 * (P1 - P_target) / (P_target - P2)
     const exactSharesToBuy = (q1 * (p1 - pTarget)) / (pTarget - p2);
-    // Ceiling or rounded shares to ensure target average is reached
     const sharesToBuy = Math.ceil(exactSharesToBuy);
     const additionalCapital = sharesToBuy * p2;
 

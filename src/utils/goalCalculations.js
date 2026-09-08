@@ -1,7 +1,6 @@
 /**
  * Goal-Based Wealth Planner (Reverse SIP / Reverse Lumpsum) Calculations
- *
- * Solves: "I need ₹X in Y years at Z% return. How much do I need to invest monthly or as lumpsum?"
+ * Enhanced with Multi-Goal Portfolio Aggregator & Asset Allocation Strategy (Equity vs Debt)
  */
 
 export const GOAL_PRESETS = [
@@ -57,9 +56,6 @@ export const GOAL_PRESETS = [
 
 /**
  * Format currency with Indian/Standard locale
- * @param {number} value
- * @param {string} [currencySymbol='₹']
- * @returns {string}
  */
 export function formatCurrency(value, currencySymbol = "₹") {
     if (value == null || isNaN(value)) return `${currencySymbol} 0`;
@@ -72,10 +68,7 @@ export function formatCurrency(value, currencySymbol = "₹") {
 }
 
 /**
- * Format compact numbers in Indian system (e.g. ₹50 L, ₹1.5 Cr)
- * @param {number} value
- * @param {string} [currencySymbol='₹']
- * @returns {string}
+ * Format compact numbers in Indian system
  */
 export function formatCompactCurrency(value, currencySymbol = "₹") {
     if (value == null || isNaN(value)) return `${currencySymbol} 0`;
@@ -95,17 +88,39 @@ export function formatCompactCurrency(value, currencySymbol = "₹") {
 }
 
 /**
+ * Asset Allocation Strategy based on Goal Horizon
+ */
+export function calculateAssetAllocation(years) {
+    const y = Math.max(1, parseFloat(years) || 1);
+    if (y < 3) {
+        return {
+            equityPct: 20,
+            debtPct: 80,
+            riskLevel: "Low Risk / Capital Preservation",
+            desc: "Focus on Debt funds & FDs to protect principal for short-term goal.",
+            color: "#3B82F6",
+        };
+    }
+    if (y <= 7) {
+        return {
+            equityPct: 50,
+            debtPct: 50,
+            riskLevel: "Moderate Risk / Balanced",
+            desc: "Balanced 50:50 allocation between Largecap Equity & Debt instruments.",
+            color: "#F59E0B",
+        };
+    }
+    return {
+        equityPct: 80,
+        debtPct: 20,
+        riskLevel: "High Growth / Aggressive Compounding",
+        desc: "Aggressive Equity allocation to maximize compounding over long horizon.",
+        color: "#10B981",
+    };
+}
+
+/**
  * Calculate comprehensive Goal-Based Wealth Plan
- *
- * @param {Object} params
- * @param {number|string} params.targetAmount - Desired goal corpus in today's money
- * @param {number|string} params.years - Horizon in years
- * @param {number|string} params.annualRate - Expected return (% p.a.)
- * @param {number|string} [params.currentSavings=0] - Existing savings already saved for this goal
- * @param {number|string} [params.stepUpPercent=0] - Optional annual step-up % for SIP
- * @param {boolean} [params.isInflationAdjusted=false] - Whether to account for inflation
- * @param {number|string} [params.inflationRate=6] - Inflation rate (% p.a.)
- * @returns {Object} Comprehensive plan breakdown
  */
 export function calculateGoalPlan({
     targetAmount,
@@ -140,31 +155,23 @@ export function calculateGoalPlan({
             totalStepUpGains: 0,
             requiredLumpsum: 0,
             totalLumpsumGains: 0,
+            assetAllocation: calculateAssetAllocation(nYears),
             milestones: [],
         };
     }
 
-    // 1. Inflation adjustment for future goal cost
-    // FV_goal = Target * (1 + inf)^years
     let futureGoalAmount = target;
     if (isInflationAdjusted && infRate > 0) {
         futureGoalAmount = target * Math.pow(1 + infRate / 100, nYears);
     }
     const inflationImpact = Math.max(0, futureGoalAmount - target);
 
-    // 2. Existing savings future compounded value
-    // FV_existing = existing * (1 + r)^years
     const existingFutureValue = existing * Math.pow(1 + rAnnual / 100, nYears);
-
-    // 3. Net corpus needed from new monthly investments
     const netTargetNeeded = Math.max(0, futureGoalAmount - existingFutureValue);
 
     const totalMonths = nYears * 12;
-    const rMonthly = rAnnual / 12 / 100; // Monthly rate
+    const rMonthly = rAnnual / 12 / 100;
 
-    // 4. Reverse Regular Monthly SIP (Annuity Due: payments at start of month)
-    // FV = M * [((1 + i)^N - 1) / i] * (1 + i)
-    // M = FV / (AnnuityFactor)
     let requiredRegularSip = 0;
     if (netTargetNeeded > 0) {
         if (rMonthly > 0) {
@@ -178,10 +185,6 @@ export function calculateGoalPlan({
     const totalRegularInvested = existing + (requiredRegularSip * totalMonths);
     const totalRegularGains = Math.max(0, futureGoalAmount - totalRegularInvested);
 
-    // 5. Reverse Step-Up Monthly SIP (+s% per year)
-    // Let starting monthly SIP be M1.
-    // In year k, monthly SIP is M1 * (1 + s)^(k-1).
-    // Future Value = M1 * sum_{m=1}^{totalMonths} (1 + s)^(floor((m-1)/12)) * (1 + rMonthly)^(totalMonths - m + 1)
     let requiredStepUpSip = requiredRegularSip;
     let finalStepUpMonthlySip = requiredRegularSip;
     let totalStepUpInvested = totalRegularInvested;
@@ -211,14 +214,11 @@ export function calculateGoalPlan({
     }
     const totalStepUpGains = Math.max(0, futureGoalAmount - totalStepUpInvested);
 
-    // 6. Reverse One-Time Lumpsum
-    // L = netTargetNeeded / (1 + rAnnual/100)^years
     const requiredLumpsum = rAnnual > 0
         ? Math.ceil(netTargetNeeded / Math.pow(1 + rAnnual / 100, nYears))
         : Math.ceil(netTargetNeeded);
     const totalLumpsumGains = Math.max(0, futureGoalAmount - (existing + requiredLumpsum));
 
-    // 7. Year-by-Year Milestone Trajectory (Simulation of Regular SIP + Existing Savings)
     const milestones = [];
     let runningBalance = existing;
     let cumulativeInvested = existing;
@@ -259,15 +259,46 @@ export function calculateGoalPlan({
         inflationImpact: Math.round(inflationImpact),
         existingFutureValue: Math.round(existingFutureValue),
         netTargetNeeded: Math.round(netTargetNeeded),
-        requiredRegularSip,
+        requiredRegularSip: Math.round(requiredRegularSip),
         totalRegularInvested: Math.round(totalRegularInvested),
         totalRegularGains: Math.round(totalRegularGains),
-        requiredStepUpSip,
-        finalStepUpMonthlySip,
+        requiredStepUpSip: Math.round(requiredStepUpSip),
+        finalStepUpMonthlySip: Math.round(finalStepUpMonthlySip),
         totalStepUpInvested: Math.round(totalStepUpInvested),
         totalStepUpGains: Math.round(totalStepUpGains),
-        requiredLumpsum,
+        requiredLumpsum: Math.round(requiredLumpsum),
         totalLumpsumGains: Math.round(totalLumpsumGains),
+        assetAllocation: calculateAssetAllocation(nYears),
         milestones,
+    };
+}
+
+/**
+ * Aggregate multiple goals into a single consolidated portfolio requirement
+ */
+export function calculateMultiGoalPortfolio(goalsList = []) {
+    let totalTargetAmount = 0;
+    let totalFutureGoalAmount = 0;
+    let totalRequiredMonthlySip = 0;
+    let totalRequiredLumpsum = 0;
+    const itemizedGoals = [];
+
+    goalsList.forEach((g) => {
+        const plan = calculateGoalPlan(g);
+        if (plan.isValid) {
+            totalTargetAmount += plan.targetAmount;
+            totalFutureGoalAmount += plan.futureGoalAmount;
+            totalRequiredMonthlySip += plan.requiredRegularSip;
+            totalRequiredLumpsum += plan.requiredLumpsum;
+            itemizedGoals.push({ ...g, plan });
+        }
+    });
+
+    return {
+        totalTargetAmount: Math.round(totalTargetAmount),
+        totalFutureGoalAmount: Math.round(totalFutureGoalAmount),
+        totalRequiredMonthlySip: Math.round(totalRequiredMonthlySip),
+        totalRequiredLumpsum: Math.round(totalRequiredLumpsum),
+        itemizedGoals,
     };
 }

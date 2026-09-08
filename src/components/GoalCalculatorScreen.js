@@ -14,6 +14,7 @@ import styles, { lightTheme, darkTheme } from "./styles";
 import {
     GOAL_PRESETS,
     calculateGoalPlan,
+    calculateMultiGoalPortfolio,
     formatCurrency,
     formatCompactCurrency,
 } from "../utils/goalCalculations";
@@ -27,18 +28,16 @@ export default function GoalCalculatorScreen({ theme = "dark", setTheme }) {
     const [activePresetId, setActivePresetId] = useState("education");
 
     // Input States
-    const [targetAmount, setTargetAmount] = useState("3500000"); // 35 Lakhs
-    const [years, setYears] = useState("12"); // 12 years
-    const [annualRate, setAnnualRate] = useState("12"); // 12% p.a.
-    const [currentSavings, setCurrentSavings] = useState("200000"); // 2 Lakhs already saved
-    const [stepUpPercent, setStepUpPercent] = useState("10"); // 10% annual step-up
+    const [targetAmount, setTargetAmount] = useState("3500000");
+    const [years, setYears] = useState("12");
+    const [annualRate, setAnnualRate] = useState("12");
+    const [currentSavings, setCurrentSavings] = useState("200000");
+    const [stepUpPercent, setStepUpPercent] = useState("10");
     const [isInflationAdjusted, setIsInflationAdjusted] = useState(true);
-    const [inflationRate, setInflationRate] = useState("6"); // 6% India average inflation
+    const [inflationRate, setInflationRate] = useState("6");
 
-    // Selected investment route for detailed milestone view: "regular" | "stepup"
     const [selectedRoute, setSelectedRoute] = useState("stepup");
 
-    // Handle preset selection
     const handleSelectPreset = (preset) => {
         setActivePresetId(preset.id);
         setTargetAmount(String(preset.targetAmount));
@@ -46,7 +45,6 @@ export default function GoalCalculatorScreen({ theme = "dark", setTheme }) {
         setAnnualRate(String(preset.annualRate));
     };
 
-    // Calculate plan
     const plan = useMemo(() => {
         return calculateGoalPlan({
             targetAmount,
@@ -57,39 +55,29 @@ export default function GoalCalculatorScreen({ theme = "dark", setTheme }) {
             isInflationAdjusted,
             inflationRate,
         });
-    }, [
-        targetAmount,
-        years,
-        annualRate,
-        currentSavings,
-        stepUpPercent,
-        isInflationAdjusted,
-        inflationRate,
-    ]);
+    }, [targetAmount, years, annualRate, currentSavings, stepUpPercent, isInflationAdjusted, inflationRate]);
+
+    const multiGoalSummary = useMemo(() => {
+        return calculateMultiGoalPortfolio(GOAL_PRESETS.slice(0, 4));
+    }, []);
 
     const handleReset = () => {
-        const defaultPreset = GOAL_PRESETS[1]; // Child Education
+        const defaultPreset = GOAL_PRESETS.find((g) => g.id === "education") || GOAL_PRESETS[0];
         handleSelectPreset(defaultPreset);
-        setCurrentSavings("0");
+        setCurrentSavings("200000");
         setStepUpPercent("10");
         setIsInflationAdjusted(true);
         setInflationRate("6");
     };
 
-    // ── Share / Export ──
     const handleShare = async () => {
         try {
             setSharing(true);
             if (Platform.OS === "web") {
                 const domNode = captureViewRef.current;
                 if (!domNode) throw new Error("Could not find view element on web.");
-
                 const html2canvas = require("html2canvas");
-                const canvas = await html2canvas(domNode, {
-                    useCORS: true,
-                    logging: false,
-                    scale: 2,
-                });
+                const canvas = await html2canvas(domNode, { useCORS: true, logging: false, scale: 2 });
                 const dataUrl = canvas.toDataURL("image/png");
                 if (!dataUrl) throw new Error("Could not capture view screenshot on web.");
 
@@ -98,603 +86,168 @@ export default function GoalCalculatorScreen({ theme = "dark", setTheme }) {
                     try {
                         const response = await fetch(dataUrl);
                         const blob = await response.blob();
-                        const file = new File([blob], "goal-wealth-plan.png", { type: "image/png" });
-
-                        const shareText = plan.isValid
-                            ? `Goal Plan: Target ${formatCompactCurrency(plan.targetAmount)} in ${years}Y (${formatCompactCurrency(plan.futureGoalAmount)} with inflation). Required SIP: ${formatCurrency(plan.requiredRegularSip)}/mo (or ${formatCurrency(plan.requiredStepUpSip)}/mo with Step-Up).`
-                            : "Goal-Based Wealth Planner Report";
+                        const file = new File([blob], "goal-plan.png", { type: "image/png" });
+                        const shareText = `Goal Plan: Required Monthly SIP: ${formatCurrency(plan.requiredRegularSip)} to reach ${formatCurrency(plan.futureGoalAmount)} in ${years} yrs`;
 
                         if (navigator.canShare({ files: [file] })) {
-                            await navigator.share({
-                                title: "Goal-Based Wealth Plan",
-                                text: shareText,
-                                files: [file],
-                            });
+                            await navigator.share({ title: "Goal-Based Wealth Plan", text: shareText, files: [file] });
                             shared = true;
                         }
-                    } catch (e) {
-                        console.log("Web share aborted or unsupported:", e);
-                    }
+                    } catch (err) {}
                 }
 
-                if (!shared) {
+                if (!shared && typeof document !== "undefined") {
                     const link = document.createElement("a");
-                    link.download = `goal-plan-${Date.now()}.png`;
                     link.href = dataUrl;
+                    link.download = `goal-plan-${Date.now()}.png`;
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
                 }
             } else {
-                const uri = await captureRef(captureViewRef, {
-                    format: "png",
-                    quality: 0.9,
-                });
-                const isAvailable = await Sharing.isAvailableAsync();
-                if (isAvailable) {
-                    await Sharing.shareAsync(uri);
-                } else {
-                    Alert.alert("Sharing Unavailable", "Sharing is not available on this device.");
+                const uri = await captureRef(captureViewRef, { format: "png", quality: 0.95 });
+                if (await Sharing.isAvailableAsync()) {
+                    await Sharing.shareAsync(uri, { mimeType: "image/png", dialogTitle: "Share Goal Plan" });
                 }
             }
-        } catch (error) {
-            console.error("Capture/Share error:", error);
-            Alert.alert("Share Failed", error.message || "Failed to capture screenshot.");
+        } catch (err) {
+            Alert.alert("Share Failed", err.message || "Could not export goal plan.");
         } finally {
             setSharing(false);
         }
     };
 
     return (
-        <ScrollView
-            style={[styles.container, activeTheme.container]}
-            contentContainerStyle={styles.contentWrapper}
-            keyboardShouldPersistTaps="handled"
-        >
-            <View ref={captureViewRef} collapsable={false} style={{ width: "100%" }}>
-                {/* ── Header ── */}
-                <View style={styles.header}>
-                    <View style={{ flex: 1 }}>
+        <ScrollView style={[styles.container, activeTheme.container]} contentContainerStyle={styles.contentWrapper}>
+            <View ref={captureViewRef} collapsable={false}>
+
+                {/* Header Card */}
+                <View style={[styles.cardWrapper, activeTheme.card]}>
+                    <View style={styles.header}>
                         <Text style={[styles.title, activeTheme.title]}>
-                            Goal Wealth Planner
+                            🎯 Goal-Based Wealth Planner
                         </Text>
-                        <Text style={[styles.subtitle, activeTheme.subtext]}>
-                            Reverse SIP & Lumpsum Goal Engineering
+                        <View style={styles.headerButtons}>
+                            <TouchableOpacity style={[styles.themeToggle, activeTheme.toggle]} onPress={handleReset} activeOpacity={0.7}>
+                                <Text style={[styles.themeToggleText, { color: activeTheme.title.color }]}>🗑 Reset</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    {/* Presets Bar */}
+                    <Text style={[styles.label, activeTheme.label, { fontSize: 12, marginBottom: 6 }]}>Quick Goal Presets:</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 8 }}>
+                        {GOAL_PRESETS.map((p) => {
+                            const isSelected = p.id === activePresetId;
+                            return (
+                                <TouchableOpacity
+                                    key={p.id}
+                                    style={[
+                                        styles.chip,
+                                        isSelected ? activeTheme.tabActive : activeTheme.toggle,
+                                        { borderColor: isSelected ? activeTheme.investedColor : activeTheme.borderColor, paddingHorizontal: 12, paddingVertical: 6 },
+                                    ]}
+                                    onPress={() => handleSelectPreset(p)}
+                                >
+                                    <Text style={[styles.chipText, isSelected ? activeTheme.tabActiveText : { color: activeTheme.title.color }]}>{p.title}</Text>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </ScrollView>
+
+                    {/* Inputs */}
+                    <View style={styles.grid}>
+                        <View style={styles.col}>
+                            <Text style={[styles.label, activeTheme.label]}>Target Goal Amount Today (₹)</Text>
+                            <TextInput style={[styles.input, activeTheme.input, { borderColor: activeTheme.borderColor }]} keyboardType="numeric" value={targetAmount} onChangeText={setTargetAmount} />
+                        </View>
+                        <View style={styles.col}>
+                            <Text style={[styles.label, activeTheme.label]}>Time Horizon (Years)</Text>
+                            <TextInput style={[styles.input, activeTheme.input, { borderColor: activeTheme.borderColor }]} keyboardType="numeric" value={years} onChangeText={setYears} />
+                        </View>
+                        <View style={styles.col}>
+                            <Text style={[styles.label, activeTheme.label]}>Expected Return (% p.a.)</Text>
+                            <TextInput style={[styles.input, activeTheme.input, { borderColor: activeTheme.borderColor }]} keyboardType="numeric" value={annualRate} onChangeText={setAnnualRate} />
+                        </View>
+                        <View style={styles.col}>
+                            <Text style={[styles.label, activeTheme.label]}>Existing Savings (₹)</Text>
+                            <TextInput style={[styles.input, activeTheme.input, { borderColor: activeTheme.borderColor }]} keyboardType="numeric" value={currentSavings} onChangeText={setCurrentSavings} />
+                        </View>
+                    </View>
+                </View>
+
+                {/* Asset Allocation Strategy Recommendation Card */}
+                {plan.isValid && (
+                    <View style={[styles.cardWrapper, activeTheme.card, { borderColor: plan.assetAllocation.color }]}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                            <Text style={{ fontSize: 16 }}>🛡️</Text>
+                            <Text style={[styles.title, { color: plan.assetAllocation.color, fontSize: 15 }]}>
+                                Asset Allocation Strategy ({plan.assetAllocation.riskLevel})
+                            </Text>
+                        </View>
+                        <Text style={[styles.subtext, activeTheme.subtext, { fontSize: 12, marginBottom: 10 }]}>
+                            {plan.assetAllocation.desc}
                         </Text>
+                        <View style={{ flexDirection: "row", gap: 8 }}>
+                            <View style={{ flex: plan.assetAllocation.equityPct, backgroundColor: "#10B981", height: 8, borderRadius: 4 }} />
+                            <View style={{ flex: plan.assetAllocation.debtPct, backgroundColor: "#3B82F6", height: 8, borderRadius: 4 }} />
+                        </View>
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
+                            <Text style={{ fontSize: 11, fontWeight: "700", color: "#10B981" }}>📈 Equity: {plan.assetAllocation.equityPct}%</Text>
+                            <Text style={{ fontSize: 11, fontWeight: "700", color: "#3B82F6" }}>🏦 Debt/FD: {plan.assetAllocation.debtPct}%</Text>
+                        </View>
                     </View>
+                )}
 
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                        <TouchableOpacity
-                            style={[styles.themeBtn, activeTheme.toggle]}
-                            onPress={handleShare}
-                            disabled={sharing}
-                            activeOpacity={0.7}
-                            title="Export or Share Screenshot"
-                        >
-                            <Text style={styles.themeBtnText}>
-                                {sharing ? "⏳" : "📸"}
-                            </Text>
-                        </TouchableOpacity>
-
-                        {setTheme && (
-                            <TouchableOpacity
-                                style={[styles.themeBtn, activeTheme.toggle]}
-                                onPress={() => setTheme(theme === "dark" ? "light" : "dark")}
-                                activeOpacity={0.7}
-                            >
-                                <Text style={styles.themeBtnText}>
-                                    {theme === "dark" ? "☀️" : "🌙"}
-                                </Text>
-                            </TouchableOpacity>
-                        )}
+                {/* Primary Plan Result Card */}
+                {plan.isValid && (
+                    <View style={[styles.metricCard, activeTheme.card, { borderColor: activeTheme.borderColor }]}>
+                        <View style={styles.metricRow}>
+                            <Text style={[styles.metricLabel, activeTheme.subtext]}>Future Inflated Goal Cost ({years} Yrs)</Text>
+                            <Text style={[styles.metricValue, { color: activeTheme.investedColor }]}>{formatCurrency(plan.futureGoalAmount)}</Text>
+                        </View>
+                        <View style={[styles.metricDivider, { backgroundColor: activeTheme.borderColor }]} />
+                        <View style={styles.metricRow}>
+                            <Text style={[styles.totalMetricLabel, { color: "#10B981" }]}>Required Fixed Monthly SIP</Text>
+                            <Text style={[styles.totalMetricValue, { color: "#10B981" }]}>{formatCurrency(plan.requiredRegularSip)}/mo</Text>
+                        </View>
+                        <View style={[styles.metricDivider, { backgroundColor: activeTheme.borderColor }]} />
+                        <View style={styles.metricRow}>
+                            <Text style={[styles.totalMetricLabel, { color: "#3B82F6" }]}>Or Required One-Time Lumpsum</Text>
+                            <Text style={[styles.totalMetricValue, { color: "#3B82F6" }]}>{formatCurrency(plan.requiredLumpsum)}</Text>
+                        </View>
                     </View>
-                </View>
+                )}
 
-                {/* ── Goal Presets ── */}
-                <View style={styles.goalPresetGrid}>
-                    {GOAL_PRESETS.map((preset) => {
-                        const isSelected = activePresetId === preset.id;
-                        return (
-                            <TouchableOpacity
-                                key={preset.id}
-                                style={[
-                                    styles.goalPresetBtn,
-                                    isSelected
-                                        ? { backgroundColor: "#2563EB", borderColor: "#2563EB" }
-                                        : { backgroundColor: theme === "dark" ? "#1E293B" : "#F8FAFC", borderColor: activeTheme.borderColor },
-                                ]}
-                                onPress={() => handleSelectPreset(preset)}
-                                activeOpacity={0.8}
-                            >
-                                <Text
-                                    style={[
-                                        styles.goalPresetTitle,
-                                        { color: isSelected ? "#FFFFFF" : activeTheme.title.color },
-                                    ]}
-                                >
-                                    {preset.title}
-                                </Text>
-                                <Text
-                                    style={[
-                                        styles.goalPresetSubtitle,
-                                        { color: isSelected ? "#E2E8F0" : activeTheme.subtext.color },
-                                    ]}
-                                >
-                                    {preset.id === "custom"
-                                        ? "Custom target"
-                                        : `${formatCompactCurrency(preset.targetAmount)} in ${preset.years}Y`}
-                                </Text>
-                            </TouchableOpacity>
-                        );
-                    })}
-                </View>
-
-                {/* ── Goal Parameters Card ── */}
-                <View style={styles.cardWrapper}>
-                    <View style={[styles.card, activeTheme.card, { padding: 14, borderRadius: 14 }]}>
-                        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                            <Text style={[styles.label, activeTheme.label, { fontWeight: "700", marginBottom: 0 }]}>
-                                TARGET PARAMETERS
-                            </Text>
-                            <TouchableOpacity onPress={handleReset} activeOpacity={0.7}>
-                                <Text style={{ fontSize: 12, color: "#EF4444", fontWeight: "700" }}>
-                                    Reset
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        {/* Target Goal Amount Input */}
-                        <View style={{ marginBottom: 12 }}>
-                            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                                <Text style={[styles.label, activeTheme.label, { marginBottom: 0 }]}>
-                                    Target Goal Corpus (in today's ₹)
-                                </Text>
-                                <Text style={{ fontSize: 12, fontWeight: "700", color: "#2563EB" }}>
-                                    {formatCompactCurrency(parseFloat(targetAmount) || 0)}
-                                </Text>
-                            </View>
-                            <TextInput
-                                style={[styles.input, activeTheme.input]}
-                                value={targetAmount}
-                                onChangeText={(v) => {
-                                    setTargetAmount(v);
-                                    setActivePresetId("custom");
-                                }}
-                                keyboardType="number-pad"
-                                placeholder="3500000"
-                                placeholderTextColor={activeTheme.placeholder.color}
-                            />
-                            {/* Quick Amount Chips */}
-                            <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
-                                {[
-                                    { label: "₹10L", val: "1000000" },
-                                    { label: "₹25L", val: "2500000" },
-                                    { label: "₹50L", val: "5000000" },
-                                    { label: "₹1Cr", val: "10000000" },
-                                    { label: "₹2Cr", val: "20000000" },
-                                ].map((chip) => (
-                                    <TouchableOpacity
-                                        key={chip.label}
-                                        style={[
-                                            styles.quickLotChip,
-                                            targetAmount === chip.val
-                                                ? { backgroundColor: "#2563EB", borderColor: "#2563EB" }
-                                                : { backgroundColor: theme === "dark" ? "#1E293B" : "#F1F5F9", borderColor: activeTheme.borderColor },
-                                        ]}
-                                        onPress={() => {
-                                            setTargetAmount(chip.val);
-                                            setActivePresetId("custom");
-                                        }}
-                                        activeOpacity={0.8}
-                                    >
-                                        <Text
-                                            style={[
-                                                styles.quickLotChipText,
-                                                { color: targetAmount === chip.val ? "#FFFFFF" : activeTheme.label.color },
-                                            ]}
-                                        >
-                                            {chip.label}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                        </View>
-
-                        {/* Horizon & Return Rate Row */}
-                        <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
-                            <View style={{ flex: 1 }}>
-                                <Text style={[styles.label, activeTheme.label]}>Horizon (Years)</Text>
-                                <TextInput
-                                    style={[styles.input, activeTheme.input]}
-                                    value={years}
-                                    onChangeText={(v) => {
-                                        setYears(v);
-                                        setActivePresetId("custom");
-                                    }}
-                                    keyboardType="number-pad"
-                                    placeholder="12"
-                                    placeholderTextColor={activeTheme.placeholder.color}
-                                />
-                                <View style={{ flexDirection: "row", gap: 4, flexWrap: "wrap", marginTop: 6 }}>
-                                    {["3", "5", "7", "10", "15", "20"].map((y) => (
-                                        <TouchableOpacity
-                                            key={y}
-                                            style={[
-                                                styles.quickLotChip,
-                                                years === y
-                                                    ? { backgroundColor: "#2563EB", borderColor: "#2563EB" }
-                                                    : { backgroundColor: theme === "dark" ? "#1E293B" : "#F1F5F9", borderColor: activeTheme.borderColor },
-                                            ]}
-                                            onPress={() => {
-                                                setYears(y);
-                                                setActivePresetId("custom");
-                                            }}
-                                            activeOpacity={0.8}
-                                        >
-                                            <Text
-                                                style={[
-                                                    styles.quickLotChipText,
-                                                    { color: years === y ? "#FFFFFF" : activeTheme.label.color },
-                                                ]}
-                                            >
-                                                {y}Y
-                                            </Text>
-                                        </TouchableOpacity>
-                                    ))}
-                                </View>
-                            </View>
-
-                            <View style={{ flex: 1 }}>
-                                <Text style={[styles.label, activeTheme.label]}>Expected Return (% p.a.)</Text>
-                                <TextInput
-                                    style={[styles.input, activeTheme.input]}
-                                    value={annualRate}
-                                    onChangeText={(v) => {
-                                        setAnnualRate(v);
-                                        setActivePresetId("custom");
-                                    }}
-                                    keyboardType="decimal-pad"
-                                    placeholder="12"
-                                    placeholderTextColor={activeTheme.placeholder.color}
-                                />
-                                <View style={{ flexDirection: "row", gap: 4, flexWrap: "wrap", marginTop: 6 }}>
-                                    {["8", "10", "12", "14", "15"].map((r) => (
-                                        <TouchableOpacity
-                                            key={r}
-                                            style={[
-                                                styles.quickLotChip,
-                                                annualRate === r
-                                                    ? { backgroundColor: "#2563EB", borderColor: "#2563EB" }
-                                                    : { backgroundColor: theme === "dark" ? "#1E293B" : "#F1F5F9", borderColor: activeTheme.borderColor },
-                                            ]}
-                                            onPress={() => {
-                                                setAnnualRate(r);
-                                                setActivePresetId("custom");
-                                            }}
-                                            activeOpacity={0.8}
-                                        >
-                                            <Text
-                                                style={[
-                                                    styles.quickLotChipText,
-                                                    { color: annualRate === r ? "#FFFFFF" : activeTheme.label.color },
-                                                ]}
-                                            >
-                                                {r}%
-                                            </Text>
-                                        </TouchableOpacity>
-                                    ))}
-                                </View>
-                            </View>
-                        </View>
-
-                        {/* Existing Savings & Step-Up Row */}
-                        <View style={{ flexDirection: "row", gap: 12 }}>
-                            <View style={{ flex: 1 }}>
-                                <Text style={[styles.label, activeTheme.label]}>Current Savings (₹)</Text>
-                                <TextInput
-                                    style={[styles.input, activeTheme.input]}
-                                    value={currentSavings}
-                                    onChangeText={setCurrentSavings}
-                                    keyboardType="number-pad"
-                                    placeholder="0"
-                                    placeholderTextColor={activeTheme.placeholder.color}
-                                />
-                                <Text style={[styles.subtext, activeTheme.subtext, { fontSize: 10, marginTop: 4 }]}>
-                                    Already saved for this goal
-                                </Text>
-                            </View>
-
-                            <View style={{ flex: 1 }}>
-                                <Text style={[styles.label, activeTheme.label]}>Annual Step-Up (% / Yr)</Text>
-                                <TextInput
-                                    style={[styles.input, activeTheme.input]}
-                                    value={stepUpPercent}
-                                    onChangeText={setStepUpPercent}
-                                    keyboardType="number-pad"
-                                    placeholder="10"
-                                    placeholderTextColor={activeTheme.placeholder.color}
-                                />
-                                <Text style={[styles.subtext, activeTheme.subtext, { fontSize: 10, marginTop: 4 }]}>
-                                    Annual increase in SIP
-                                </Text>
-                            </View>
-                        </View>
+                {/* Multi-Goal Consolidated Portfolio Aggregator */}
+                <View style={[styles.cardWrapper, activeTheme.card, { marginTop: 14 }]}>
+                    <Text style={[styles.title, activeTheme.title, { fontSize: 15, marginBottom: 8 }]}>
+                        🌐 Multi-Goal Portfolio Aggregator Summary
+                    </Text>
+                    <Text style={[styles.subtext, activeTheme.subtext, { fontSize: 12, marginBottom: 12 }]}>
+                        Consolidated investment required across your top life goals (Education, Home, Car, Retirement).
+                    </Text>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
+                        <Text style={[styles.label, activeTheme.subtext]}>Total Combined Goal Targets:</Text>
+                        <Text style={{ fontWeight: "700", color: activeTheme.title.color }}>{formatCompactCurrency(multiGoalSummary.totalFutureGoalAmount)}</Text>
+                    </View>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                        <Text style={[styles.label, { color: "#10B981" }]}>Total Consolidated Monthly SIP Required:</Text>
+                        <Text style={{ fontWeight: "800", color: "#10B981" }}>{formatCurrency(multiGoalSummary.totalRequiredMonthlySip)}/mo</Text>
                     </View>
                 </View>
 
-                {/* ── Inflation-Adjusted Future Goal Cost Card ── */}
-                <View
-                    style={[
-                        styles.inflationCard,
-                        {
-                            backgroundColor: isInflationAdjusted
-                                ? theme === "dark" ? "#2A1805" : "#FEF3C7"
-                                : theme === "dark" ? "#0F172A" : "#FFFFFF",
-                            borderColor: isInflationAdjusted
-                                ? theme === "dark" ? "#78350F" : "#FDE68A"
-                                : activeTheme.borderColor,
-                        },
-                    ]}
+                {/* Share Button */}
+                <TouchableOpacity
+                    style={[styles.themeToggle, activeTheme.toggle, { marginVertical: 12, paddingVertical: 13, borderRadius: 12, borderWidth: 1, borderColor: activeTheme.borderColor, alignItems: "center" }]}
+                    onPress={handleShare}
+                    disabled={sharing}
                 >
-                    <View style={styles.inflationHeaderRow}>
-                        <View style={styles.inflationTitleCol}>
-                            <Text
-                                style={[
-                                    styles.inflationTitle,
-                                    { color: isInflationAdjusted ? (theme === "dark" ? "#FBBF24" : "#92400E") : activeTheme.title.color },
-                                ]}
-                            >
-                                🎈 Inflation-Adjusted Future Target
-                            </Text>
-                            <Text
-                                style={[
-                                    styles.inflationSubtitle,
-                                    { color: isInflationAdjusted ? (theme === "dark" ? "#FDE68A" : "#78350F") : activeTheme.subtext.color },
-                                ]}
-                            >
-                                {isInflationAdjusted
-                                    ? `Today's ${formatCompactCurrency(plan.targetAmount)} will actually cost ${formatCompactCurrency(plan.futureGoalAmount)} in ${years} years`
-                                    : "Plan in nominal today's rupees without inflation"}
-                            </Text>
-                        </View>
+                    <Text style={{ fontSize: 14, fontWeight: "700", color: activeTheme.title.color }}>{sharing ? "⏳ Generating..." : "📤 Share / Export Goal Plan"}</Text>
+                </TouchableOpacity>
 
-                        <TouchableOpacity
-                            style={[
-                                styles.inflationToggleBtn,
-                                {
-                                    backgroundColor: isInflationAdjusted ? "#D97706" : activeTheme.toggle.backgroundColor,
-                                    borderColor: isInflationAdjusted ? "#B45309" : activeTheme.borderColor,
-                                },
-                            ]}
-                            onPress={() => setIsInflationAdjusted(!isInflationAdjusted)}
-                            activeOpacity={0.8}
-                        >
-                            <Text
-                                style={[
-                                    styles.inflationToggleBtnText,
-                                    { color: isInflationAdjusted ? "#FFFFFF" : activeTheme.subtext.color },
-                                ]}
-                            >
-                                {isInflationAdjusted ? "✓ INFLATION ON" : "INFLATION OFF"}
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    {isInflationAdjusted && (
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: theme === "dark" ? "#451A03" : "#FDE68A" }}>
-                            <Text style={{ fontSize: 12, fontWeight: "600", color: theme === "dark" ? "#FDE68A" : "#92400E" }}>
-                                Annual Inflation Rate:
-                            </Text>
-                            <TextInput
-                                style={[
-                                    styles.input,
-                                    activeTheme.input,
-                                    { width: 60, height: 34, paddingVertical: 2, textAlign: "center" },
-                                ]}
-                                value={inflationRate}
-                                onChangeText={setInflationRate}
-                                keyboardType="decimal-pad"
-                            />
-                            <Text style={{ fontSize: 12, fontWeight: "700", color: theme === "dark" ? "#FDE68A" : "#92400E" }}>
-                                % p.a.
-                            </Text>
-                        </View>
-                    )}
-                </View>
-
-                {/* ── Solution Routes (Comparison Grid) ── */}
-                <View style={{ marginBottom: 6 }}>
-                    <Text style={[styles.label, activeTheme.subtext, { fontSize: 11, fontWeight: "700", letterSpacing: 0.5 }]}>
-                        THREE WAYS TO ACHIEVE YOUR {formatCompactCurrency(plan.futureGoalAmount)} GOAL
-                    </Text>
-                </View>
-
-                <View style={styles.goalStrategyRow}>
-                    {/* Route 1: Step-Up SIP */}
-                    <TouchableOpacity
-                        style={[
-                            styles.goalStrategyCard,
-                            {
-                                backgroundColor: activeTheme.card.backgroundColor,
-                                borderColor: selectedRoute === "stepup" ? "#10B981" : activeTheme.borderColor,
-                                borderWidth: selectedRoute === "stepup" ? 2 : 1,
-                            },
-                        ]}
-                        onPress={() => setSelectedRoute("stepup")}
-                        activeOpacity={0.8}
-                    >
-                        <View style={[styles.goalStrategyBadge, { backgroundColor: "#ECFDF5" }]}>
-                            <Text style={[styles.goalStrategyBadgeText, { color: "#059669" }]}>
-                                🌟 EASIEST TO START (+{stepUpPercent}%/yr)
-                            </Text>
-                        </View>
-                        <Text style={[styles.subtext, activeTheme.subtext, { fontSize: 11 }]}>
-                            Starting Monthly SIP
-                        </Text>
-                        <Text style={[styles.goalStrategyAmount, { color: "#10B981", marginVertical: 2 }]}>
-                            {formatCurrency(plan.requiredStepUpSip)}
-                            <Text style={{ fontSize: 13, fontWeight: "600", color: activeTheme.subtext.color }}> /mo</Text>
-                        </Text>
-                        <Text style={[styles.goalStrategySubtext, activeTheme.subtext]}>
-                            Ends at {formatCurrency(plan.finalStepUpMonthlySip)}/mo in Yr {years}. Total Invested: {formatCompactCurrency(plan.totalStepUpInvested)}.
-                        </Text>
-                    </TouchableOpacity>
-
-                    {/* Route 2: Regular SIP */}
-                    <TouchableOpacity
-                        style={[
-                            styles.goalStrategyCard,
-                            {
-                                backgroundColor: activeTheme.card.backgroundColor,
-                                borderColor: selectedRoute === "regular" ? "#2563EB" : activeTheme.borderColor,
-                                borderWidth: selectedRoute === "regular" ? 2 : 1,
-                            },
-                        ]}
-                        onPress={() => setSelectedRoute("regular")}
-                        activeOpacity={0.8}
-                    >
-                        <View style={[styles.goalStrategyBadge, { backgroundColor: "#EFF6FF" }]}>
-                            <Text style={[styles.goalStrategyBadgeText, { color: "#2563EB" }]}>
-                                📅 FIXED MONTHLY SIP
-                            </Text>
-                        </View>
-                        <Text style={[styles.subtext, activeTheme.subtext, { fontSize: 11 }]}>
-                            Fixed Monthly SIP
-                        </Text>
-                        <Text style={[styles.goalStrategyAmount, { color: "#2563EB", marginVertical: 2 }]}>
-                            {formatCurrency(plan.requiredRegularSip)}
-                            <Text style={{ fontSize: 13, fontWeight: "600", color: activeTheme.subtext.color }}> /mo</Text>
-                        </Text>
-                        <Text style={[styles.goalStrategySubtext, activeTheme.subtext]}>
-                            Same monthly amount for {years} years. Total Invested: {formatCompactCurrency(plan.totalRegularInvested)}.
-                        </Text>
-                    </TouchableOpacity>
-
-                    {/* Route 3: One-Time Lumpsum */}
-                    <View
-                        style={[
-                            styles.goalStrategyCard,
-                            {
-                                backgroundColor: activeTheme.card.backgroundColor,
-                                borderColor: activeTheme.borderColor,
-                            },
-                        ]}
-                    >
-                        <View style={[styles.goalStrategyBadge, { backgroundColor: theme === "dark" ? "#1E293B" : "#F1F5F9" }]}>
-                            <Text style={[styles.goalStrategyBadgeText, { color: activeTheme.label.color }]}>
-                                💰 ONE-TIME LUMPSUM
-                            </Text>
-                        </View>
-                        <Text style={[styles.subtext, activeTheme.subtext, { fontSize: 11 }]}>
-                            Single Deposit Today
-                        </Text>
-                        <Text style={[styles.goalStrategyAmount, { color: activeTheme.title.color, marginVertical: 2 }]}>
-                            {formatCompactCurrency(plan.requiredLumpsum)}
-                        </Text>
-                        <Text style={[styles.goalStrategySubtext, activeTheme.subtext]}>
-                            Compound untouched at {annualRate}% p.a. for {years} years with ₹0 monthly commitment.
-                        </Text>
-                    </View>
-                </View>
-
-                {/* ── Wealth Breakdown Summary ── */}
-                <View style={styles.cardWrapper}>
-                    <View style={[styles.card, activeTheme.card, { padding: 16, borderRadius: 16 }]}>
-                        <Text style={[styles.label, activeTheme.subtext, { fontSize: 11, fontWeight: "700", letterSpacing: 0.5 }]}>
-                            PLAN WEALTH ACCUMULATION SUMMARY
-                        </Text>
-
-                        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", marginTop: 4, marginBottom: 12 }}>
-                            <Text style={{ fontSize: 26, fontWeight: "800", color: activeTheme.title.color }}>
-                                {formatCurrency(plan.futureGoalAmount)}
-                            </Text>
-                            <Text style={{ fontSize: 12, fontWeight: "700", color: "#10B981" }}>
-                                🎯 100% Target Met
-                            </Text>
-                        </View>
-
-                        {/* Visual Progress Ratio Bar */}
-                        <View style={{ marginBottom: 12 }}>
-                            <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
-                                <Text style={{ fontSize: 11, color: "#2563EB", fontWeight: "700" }}>
-                                    Your Capital Outlay: {formatCompactCurrency(plan.totalRegularInvested)}
-                                </Text>
-                                <Text style={{ fontSize: 11, color: "#10B981", fontWeight: "700" }}>
-                                    Wealth Growth (Returns): {formatCompactCurrency(plan.totalRegularGains)}
-                                </Text>
-                            </View>
-                            <View style={[styles.goalProgressBarContainer, { backgroundColor: activeTheme.borderColor }]}>
-                                <View
-                                    style={[
-                                        styles.goalProgressBarFill,
-                                        {
-                                            width: `${Math.min(100, Math.max(5, (plan.totalRegularInvested / (plan.futureGoalAmount || 1)) * 100))}%`,
-                                            backgroundColor: "#2563EB",
-                                        },
-                                    ]}
-                                />
-                            </View>
-                        </View>
-
-                        {/* Existing Savings Callout */}
-                        {parseFloat(currentSavings) > 0 && (
-                            <View style={{ padding: 10, borderRadius: 10, backgroundColor: theme === "dark" ? "#0F172A" : "#F8FAFC", borderWidth: 1, borderColor: activeTheme.borderColor, marginTop: 4 }}>
-                                <Text style={{ fontSize: 11, color: activeTheme.label.color }}>
-                                    💼 <Text style={{ fontWeight: "700" }}>Existing Savings Advantage:</Text> Your initial {formatCompactCurrency(parseFloat(currentSavings))} will compound to {formatCompactCurrency(plan.existingFutureValue)} by year {years}, reducing your required SIP burden significantly!
-                                </Text>
-                            </View>
-                        )}
-                    </View>
-                </View>
-
-                {/* ── Year-by-Year Milestone Trajectory Table ── */}
-                <View style={[styles.taxTable, { backgroundColor: activeTheme.card.backgroundColor, borderColor: activeTheme.borderColor }]}>
-                    <View
-                        style={[
-                            styles.taxTableHeader,
-                            {
-                                backgroundColor: activeTheme.tableHeaderBg,
-                                borderBottomColor: activeTheme.borderColor,
-                            },
-                        ]}
-                    >
-                        <Text style={[styles.taxTableHeaderText, { color: activeTheme.subtext.color }]}>
-                            Yearly Growth Milestone
-                        </Text>
-                        <Text style={[styles.taxTableHeaderText, { color: activeTheme.subtext.color }]}>
-                            Corpus & % Goal
-                        </Text>
-                    </View>
-
-                    {plan.milestones.map((m) => (
-                        <View key={m.year} style={[styles.taxRow, { borderBottomColor: activeTheme.borderColor }]}>
-                            <View style={styles.taxLabelCol}>
-                                <Text style={[styles.taxName, { color: activeTheme.title.color }]}>
-                                    Year {m.year} ({m.progressPercent}% achieved)
-                                </Text>
-                                <Text style={[styles.taxNote, activeTheme.subtext]}>
-                                    Invested: {formatCompactCurrency(m.cumulativeInvested)} | Compounded: +{formatCompactCurrency(m.yearGain)}
-                                </Text>
-                            </View>
-                            <View style={{ alignItems: "flex-end" }}>
-                                <Text style={[styles.taxValue, { color: m.progressPercent >= 100 ? "#10B981" : activeTheme.title.color }]}>
-                                    {formatCurrency(m.closingBalance)}
-                                </Text>
-                                <Text style={{ fontSize: 10, fontWeight: "700", color: "#10B981", marginTop: 2 }}>
-                                    {m.progressPercent}% of goal
-                                </Text>
-                            </View>
-                        </View>
-                    ))}
-                </View>
-
-                {/* ── Educational Takeaway Banner ── */}
-                <View style={{ paddingHorizontal: 4, paddingBottom: 24 }}>
-                    <Text style={[styles.subtext, activeTheme.subtext, { fontSize: 11, lineHeight: 16 }]}>
-                        💡 <Text style={{ fontWeight: "700" }}>The Step-Up SIP Advantage:</Text> Notice that with a 10% annual Step-Up SIP, your starting monthly commitment is <Text style={{ fontWeight: "700", color: "#10B981" }}>{formatCurrency(plan.requiredStepUpSip)}/mo</Text> instead of <Text style={{ fontWeight: "700" }}>{formatCurrency(plan.requiredRegularSip)}/mo</Text> — a 30%+ lower initial investment hurdle! As your income grows with yearly appraisals, your contributions comfortably step up to achieve 100% of your target on schedule.
-                    </Text>
-                </View>
             </View>
+            <View style={{ height: 30 }} />
         </ScrollView>
     );
 }

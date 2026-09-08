@@ -9,7 +9,6 @@ import {
     Alert,
 } from "react-native";
 import { captureRef } from "react-native-view-shot";
-import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import styles, { lightTheme, darkTheme } from "./styles";
 import {
@@ -17,8 +16,10 @@ import {
     calculateYearlyBreakdown,
     calculateSipAndHoldResult,
     calculateSipAndHoldYearlyBreakdown,
+    calculateSipMultiScenarios,
     calculateInflationAdjustedValue,
     formatCurrency,
+    formatCompactCurrency,
 } from "../utils/sipCalculations";
 import SipDonutChart from "./SipDonutChart";
 
@@ -40,8 +41,22 @@ export default function SipCalculatorScreen({ theme = "dark", setTheme }) {
     const [sipYears, setSipYears] = useState("5");
     const [totalYears, setTotalYears] = useState("20");
     const [stepUpPercent, setStepUpPercent] = useState("0");
+    const [stepUpFrequency, setStepUpFrequency] = useState("annual"); // "annual" | "half_yearly" | "monthly"
+    
+    // Feature 1: LTCG Tax Deduction
+    const [deductLtcgTax, setDeductLtcgTax] = useState(false);
+    const [ltcgTaxRate, setLtcgTaxRate] = useState("12.5");
+    const [ltcgExemption, setLtcgExemption] = useState("125000");
+
+    // Inflation adjustment
     const [adjustInflation, setAdjustInflation] = useState(false);
     const [inflationRate, setInflationRate] = useState("6");
+
+    // Feature 3: Multi-scenario comparisons
+    const [bearRate, setBearRate] = useState("8");
+    const [bullRate, setBullRate] = useState("15");
+    const [showScenarios, setShowScenarios] = useState(true);
+
     const [sharing, setSharing] = useState(false);
 
     const isLumpsum = calcMode === "lumpsum";
@@ -52,62 +67,93 @@ export default function SipCalculatorScreen({ theme = "dark", setTheme }) {
 
     // Calculations
     const result = useMemo(() => {
-        if (isSipHold) {
-            return calculateSipAndHoldResult({
-                investmentAmount,
-                annualRate,
-                sipYears,
-                totalYears,
-                stepUpPercent: stepUpNum,
-            });
-        }
-        return calculateSipResult({
+        const params = {
             investmentAmount,
             annualRate,
             years,
+            sipYears,
+            totalYears,
             stepUpPercent: stepUpNum,
+            stepUpFrequency,
             isLumpsum,
-        });
-    }, [calcMode, investmentAmount, annualRate, years, sipYears, totalYears, isSipHold, isLumpsum, stepUpNum]);
+            deductLtcgTax,
+            ltcgTaxRate,
+            ltcgExemption,
+        };
+
+        if (isSipHold) {
+            return calculateSipAndHoldResult(params);
+        }
+        return calculateSipResult(params);
+    }, [calcMode, investmentAmount, annualRate, years, sipYears, totalYears, isSipHold, isLumpsum, stepUpNum, stepUpFrequency, deductLtcgTax, ltcgTaxRate, ltcgExemption]);
 
     const realMaturityValue = useMemo(() => {
-        if (!adjustInflation) return result.maturityValue;
-        return calculateInflationAdjustedValue(result.maturityValue, inflationNum, effectiveHorizonYears);
-    }, [adjustInflation, result.maturityValue, inflationNum, effectiveHorizonYears]);
+        const nominalVal = deductLtcgTax ? result.netMaturityValue : result.maturityValue;
+        if (!adjustInflation) return nominalVal;
+        return calculateInflationAdjustedValue(nominalVal, inflationNum, effectiveHorizonYears);
+    }, [adjustInflation, result.maturityValue, result.netMaturityValue, deductLtcgTax, inflationNum, effectiveHorizonYears]);
 
     const purchasingPowerLossPct = useMemo(() => {
-        if (!adjustInflation || result.maturityValue <= 0) return 0;
-        return Math.max(0, ((result.maturityValue - realMaturityValue) / result.maturityValue) * 100);
-    }, [adjustInflation, result.maturityValue, realMaturityValue]);
+        const targetNominal = deductLtcgTax ? result.netMaturityValue : result.maturityValue;
+        if (!adjustInflation || targetNominal <= 0) return 0;
+        return Math.max(0, ((targetNominal - realMaturityValue) / targetNominal) * 100);
+    }, [adjustInflation, result.maturityValue, result.netMaturityValue, deductLtcgTax, realMaturityValue]);
 
-    const milestones = useMemo(() => {
-        let list = [];
-        if (isSipHold) {
-            list = calculateSipAndHoldYearlyBreakdown({
-                investmentAmount,
-                annualRate,
-                sipYears,
-                totalYears,
-                stepUpPercent: stepUpNum,
-            });
-        } else {
-            list = calculateYearlyBreakdown({
+    const multiScenarios = useMemo(() => {
+        return calculateSipMultiScenarios(
+            {
                 investmentAmount,
                 annualRate,
                 years,
+                sipYears,
+                totalYears,
                 stepUpPercent: stepUpNum,
+                stepUpFrequency,
                 isLumpsum,
-            });
+                calcMode,
+                deductLtcgTax,
+                ltcgTaxRate,
+                ltcgExemption,
+            },
+            bearRate,
+            annualRate,
+            bullRate
+        );
+    }, [calcMode, investmentAmount, annualRate, years, sipYears, totalYears, isSipHold, isLumpsum, stepUpNum, stepUpFrequency, deductLtcgTax, ltcgTaxRate, ltcgExemption, bearRate, bullRate]);
+
+    const milestones = useMemo(() => {
+        let list = [];
+        const params = {
+            investmentAmount,
+            annualRate,
+            years,
+            sipYears,
+            totalYears,
+            stepUpPercent: stepUpNum,
+            stepUpFrequency,
+            isLumpsum,
+            deductLtcgTax,
+            ltcgTaxRate,
+            ltcgExemption,
+        };
+
+        if (isSipHold) {
+            list = calculateSipAndHoldYearlyBreakdown(params);
+        } else {
+            list = calculateYearlyBreakdown(params);
         }
 
         if (adjustInflation) {
-            return list.map((m) => ({
-                ...m,
-                realTotal: calculateInflationAdjustedValue(m.total, inflationNum, m.year),
-            }));
+            return list.map((m) => {
+                const baseVal = deductLtcgTax ? m.netTotal : m.total;
+                return {
+                    ...m,
+                    realTotal: calculateInflationAdjustedValue(baseVal, inflationNum, m.year),
+                };
+            });
         }
         return list;
-    }, [calcMode, investmentAmount, annualRate, years, sipYears, totalYears, isSipHold, isLumpsum, stepUpNum, adjustInflation, inflationNum]);
+    }, [calcMode, investmentAmount, annualRate, years, sipYears, totalYears, isSipHold, isLumpsum, stepUpNum, stepUpFrequency, deductLtcgTax, ltcgTaxRate, ltcgExemption, adjustInflation, inflationNum]);
 
     const handleReset = () => {
         setInvestmentAmount("10000");
@@ -116,8 +162,14 @@ export default function SipCalculatorScreen({ theme = "dark", setTheme }) {
         setSipYears("5");
         setTotalYears("20");
         setStepUpPercent("0");
+        setStepUpFrequency("annual");
+        setDeductLtcgTax(false);
+        setLtcgTaxRate("12.5");
+        setLtcgExemption("125000");
         setAdjustInflation(false);
         setInflationRate("6");
+        setBearRate("8");
+        setBullRate("15");
     };
 
     const selectSipYears = (yr) => {
@@ -159,12 +211,13 @@ export default function SipCalculatorScreen({ theme = "dark", setTheme }) {
                         const blob = await response.blob();
                         const file = new File([blob], "sip-plan.png", { type: "image/png" });
 
-                        const stepUpText = (!isLumpsum && stepUpNum > 0) ? ` with ${stepUpNum}% Annual Step-Up` : "";
+                        const stepUpText = (!isLumpsum && stepUpNum > 0) ? ` with ${stepUpNum}% ${stepUpFrequency} Step-Up` : "";
+                        const taxText = deductLtcgTax ? `, Net Post-Tax: ${formatCurrency(result.netMaturityValue)}` : "";
                         const inflationText = adjustInflation ? `, Purchasing Power (@${inflationNum}% inf): ${formatCurrency(realMaturityValue)}` : "";
 
                         const shareText = isSipHold
-                            ? `SIP & Grow Plan: Invested ${formatCurrency(result.totalInvested)} for ${sipYears} yrs${stepUpText}, Final Value at ${totalYears} yrs: ${formatCurrency(result.maturityValue)}${inflationText}`
-                            : `SIP Plan: Invested ${formatCurrency(result.totalInvested)}${stepUpText}, Maturity: ${formatCurrency(result.maturityValue)}${inflationText}`;
+                            ? `SIP & Grow Plan: Invested ${formatCurrency(result.totalInvested)} for ${sipYears} yrs${stepUpText}, Final Value at ${totalYears} yrs: ${formatCurrency(result.maturityValue)}${taxText}${inflationText}`
+                            : `SIP Plan: Invested ${formatCurrency(result.totalInvested)}${stepUpText}, Maturity: ${formatCurrency(result.maturityValue)}${taxText}${inflationText}`;
 
                         if (navigator.canShare({ files: [file] })) {
                             await navigator.share({
@@ -471,16 +524,16 @@ export default function SipCalculatorScreen({ theme = "dark", setTheme }) {
                             </>
                         )}
 
-                        {/* ── Annual Step-Up SIP (% / Year) ── */}
+                        {/* ── Feature 2: Flexible Step-Up SIP (% & Frequency) ── */}
                         {!isLumpsum && (
                             <View style={[styles.fullCol, { marginTop: 4 }]}>
                                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                                     <Text style={[styles.label, activeTheme.label]}>
-                                        Annual Step-Up (% / Year)
+                                        Step-Up SIP (% Increase)
                                     </Text>
                                     {stepUpNum > 0 && (
                                         <Text style={{ fontSize: 11, fontWeight: "700", color: activeTheme.investedColor }}>
-                                            +{stepUpNum}% / yr
+                                            +{stepUpNum}% / {stepUpFrequency === "annual" ? "year" : stepUpFrequency === "half_yearly" ? "6 months" : "month"}
                                         </Text>
                                     )}
                                 </View>
@@ -518,6 +571,46 @@ export default function SipCalculatorScreen({ theme = "dark", setTheme }) {
                                         );
                                     })}
                                 </View>
+
+                                {/* Step-Up Frequency Selector */}
+                                {stepUpNum > 0 && (
+                                    <View style={{ marginTop: 10 }}>
+                                        <Text style={[styles.label, activeTheme.label, { fontSize: 12, marginBottom: 4 }]}>
+                                            Step-Up Frequency:
+                                        </Text>
+                                        <View style={{ flexDirection: "row", gap: 8 }}>
+                                            {[
+                                                { label: "📅 Annual", key: "annual" },
+                                                { label: "🌓 Half-Yearly", key: "half_yearly" },
+                                                { label: "🌙 Monthly", key: "monthly" },
+                                            ].map((item) => {
+                                                const isSelected = stepUpFrequency === item.key;
+                                                return (
+                                                    <TouchableOpacity
+                                                        key={item.key}
+                                                        style={[
+                                                            styles.chip,
+                                                            isSelected ? activeTheme.tabActive : activeTheme.toggle,
+                                                            { flex: 1, alignItems: "center", justifyContent: "center", borderColor: isSelected ? activeTheme.investedColor : activeTheme.borderColor, paddingVertical: 6 },
+                                                        ]}
+                                                        onPress={() => setStepUpFrequency(item.key)}
+                                                        activeOpacity={0.7}
+                                                    >
+                                                        <Text
+                                                            style={[
+                                                                styles.chipText,
+                                                                isSelected ? activeTheme.tabActiveText : { color: activeTheme.title.color },
+                                                                { fontSize: 12 },
+                                                            ]}
+                                                        >
+                                                            {item.label}
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                );
+                                            })}
+                                        </View>
+                                    </View>
+                                )}
                             </View>
                         )}
                     </View>
@@ -527,7 +620,7 @@ export default function SipCalculatorScreen({ theme = "dark", setTheme }) {
                         <View style={[styles.infoBanner, { backgroundColor: activeTheme.bannerBg, borderColor: activeTheme.bannerBorder, marginTop: 12 }]}>
                             <Text style={{ fontSize: 16 }}>📈</Text>
                             <Text style={[styles.infoBannerText, { color: activeTheme.bannerText }]}>
-                                With a {stepUpNum}% yearly step-up, your monthly contribution grows from {formatCurrency(investmentAmount)} in Year 1 to {formatCurrency(result.finalMonthlyInvestment)} in Year {years}. You invest a total of {formatCurrency(result.totalInvested)}.
+                                With a {stepUpNum}% {stepUpFrequency === "annual" ? "yearly" : stepUpFrequency === "half_yearly" ? "half-yearly" : "monthly"} step-up, your monthly contribution grows from {formatCurrency(investmentAmount)} in Year 1 to {formatCurrency(result.finalMonthlyInvestment)} in Year {years}. You invest a total of {formatCurrency(result.totalInvested)}.
                             </Text>
                         </View>
                     )}
@@ -538,9 +631,91 @@ export default function SipCalculatorScreen({ theme = "dark", setTheme }) {
                             <Text style={{ fontSize: 16 }}>💡</Text>
                             <Text style={[styles.infoBannerText, { color: activeTheme.bannerText }]}>
                                 {stepUpNum > 0
-                                    ? `You invest monthly with a ${stepUpNum}% annual step-up (reaching ${formatCurrency(result.finalMonthlyInvestment)}/mo in Yr ${sipYears}) totaling ${formatCurrency(result.totalInvested)}. Then stop contributing and let your ${formatCurrency(result.sipMaturityValue)} corpus compound untouched for another ${result.holdingYears} yrs to reach ${formatCurrency(result.maturityValue)}!`
+                                    ? `You invest monthly with a ${stepUpNum}% ${stepUpFrequency} step-up (reaching ${formatCurrency(result.finalMonthlyInvestment)}/mo in Yr ${sipYears}) totaling ${formatCurrency(result.totalInvested)}. Then stop contributing and let your ${formatCurrency(result.sipMaturityValue)} corpus compound untouched for another ${result.holdingYears} yrs to reach ${formatCurrency(result.maturityValue)}!`
                                     : `You invest monthly for ${sipYears || 0} yrs (${formatCurrency(result.totalInvested)} total). Then stop contributing and let your ${formatCurrency(result.sipMaturityValue)} corpus compound untouched for another ${result.holdingYears} yrs to reach ${formatCurrency(result.maturityValue)}!`}
                             </Text>
+                        </View>
+                    )}
+                </View>
+
+                {/* ── Feature 1: Equity LTCG Tax Deduction Toggle Card ── */}
+                <View
+                    style={[
+                        styles.inflationCard,
+                        activeTheme.card,
+                        {
+                            borderColor: deductLtcgTax ? "#10B981" : activeTheme.borderColor,
+                            marginBottom: 12,
+                        },
+                    ]}
+                >
+                    <View style={styles.inflationHeaderRow}>
+                        <View style={styles.inflationTitleCol}>
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                                <Text style={{ fontSize: 15 }}>⚖️</Text>
+                                <Text style={[styles.inflationTitle, activeTheme.title]}>
+                                    Equity LTCG Tax Deduction
+                                </Text>
+                            </View>
+                            <Text style={[styles.inflationSubtitle, activeTheme.subtext]}>
+                                {deductLtcgTax
+                                    ? `Deducting ${ltcgTaxRate}% tax on gains > ₹${(parseFloat(ltcgExemption)/100000).toFixed(2)}L`
+                                    : "Deduct 12.5% Equity LTCG Tax (India Budget 2024+)"}
+                            </Text>
+                        </View>
+
+                        <TouchableOpacity
+                            style={[
+                                styles.inflationToggleBtn,
+                                deductLtcgTax ? activeTheme.tabActive : activeTheme.toggle,
+                                {
+                                    borderColor: deductLtcgTax ? activeTheme.investedColor : activeTheme.borderColor,
+                                },
+                            ]}
+                            onPress={() => setDeductLtcgTax((prev) => !prev)}
+                            activeOpacity={0.8}
+                        >
+                            <Text
+                                style={[
+                                    styles.inflationToggleBtnText,
+                                    deductLtcgTax ? activeTheme.tabActiveText : { color: activeTheme.title.color },
+                                ]}
+                            >
+                                {deductLtcgTax ? "✓ Active" : "Enable"}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    {deductLtcgTax && (
+                        <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: activeTheme.borderColor }}>
+                            <View style={{ flexDirection: "row", gap: 12 }}>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={[styles.label, activeTheme.label, { fontSize: 12 }]}>
+                                        LTCG Tax Rate (%)
+                                    </Text>
+                                    <TextInput
+                                        style={[styles.input, activeTheme.input, { borderColor: activeTheme.borderColor, paddingVertical: 6, fontSize: 13 }]}
+                                        keyboardType="numeric"
+                                        value={ltcgTaxRate}
+                                        placeholder="12.5"
+                                        placeholderTextColor={activeTheme.placeholder.color}
+                                        onChangeText={setLtcgTaxRate}
+                                    />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={[styles.label, activeTheme.label, { fontSize: 12 }]}>
+                                        Exemption Threshold (₹)
+                                    </Text>
+                                    <TextInput
+                                        style={[styles.input, activeTheme.input, { borderColor: activeTheme.borderColor, paddingVertical: 6, fontSize: 13 }]}
+                                        keyboardType="numeric"
+                                        value={ltcgExemption}
+                                        placeholder="125000"
+                                        placeholderTextColor={activeTheme.placeholder.color}
+                                        onChangeText={setLtcgExemption}
+                                    />
+                                </View>
+                            </View>
                         </View>
                     )}
                 </View>
@@ -692,7 +867,7 @@ export default function SipCalculatorScreen({ theme = "dark", setTheme }) {
                     <View style={styles.metricRow}>
                         <View>
                             <Text style={[styles.totalMetricLabel, activeTheme.title]}>
-                                Total Maturity Value
+                                Gross Maturity Value
                             </Text>
                             {adjustInflation && (
                                 <Text style={[styles.inflationSubtitle, activeTheme.subtext]}>
@@ -704,6 +879,38 @@ export default function SipCalculatorScreen({ theme = "dark", setTheme }) {
                             {formatCurrency(result.maturityValue)}
                         </Text>
                     </View>
+
+                    {/* LTCG Tax Breakdown Row */}
+                    {deductLtcgTax && (
+                        <>
+                            <View style={[styles.metricDivider, { backgroundColor: activeTheme.borderColor }]} />
+                            <View style={styles.metricRow}>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={[styles.metricLabel, { color: "#EF4444", fontWeight: "600" }]}>
+                                        LTCG Tax Payable ({ltcgTaxRate}% over ₹{(parseFloat(ltcgExemption)/100000).toFixed(2)}L)
+                                    </Text>
+                                </View>
+                                <Text style={[styles.metricValue, { color: "#EF4444", fontWeight: "700" }]}>
+                                    -{formatCurrency(result.ltcgTaxAmount)}
+                                </Text>
+                            </View>
+
+                            <View style={[styles.metricDivider, { backgroundColor: activeTheme.borderColor }]} />
+                            <View style={styles.metricRow}>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={[styles.totalMetricLabel, { color: "#10B981" }]}>
+                                        Net Post-Tax Wealth
+                                    </Text>
+                                    <Text style={[styles.inflationSubtitle, activeTheme.subtext]}>
+                                        (After Equity LTCG Tax)
+                                    </Text>
+                                </View>
+                                <Text style={[styles.totalMetricValue, { color: "#10B981" }]}>
+                                    {formatCurrency(result.netMaturityValue)}
+                                </Text>
+                            </View>
+                        </>
+                    )}
 
                     {/* Inflation Adjusted Real Purchasing Power */}
                     {adjustInflation && (
@@ -747,13 +954,137 @@ export default function SipCalculatorScreen({ theme = "dark", setTheme }) {
                 <SipDonutChart
                     totalInvested={result.totalInvested}
                     estimatedReturns={result.estimatedReturns}
-                    maturityValue={result.maturityValue}
+                    maturityValue={deductLtcgTax ? result.netMaturityValue : result.maturityValue}
                     theme={theme}
                 />
 
+                {/* ── Feature 3: Multi-Scenario Market Comparison Card ── */}
+                <View style={[styles.cardWrapper, activeTheme.card, { marginTop: 16 }]}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                            <Text style={{ fontSize: 16 }}>📊</Text>
+                            <Text style={[styles.title, activeTheme.title, { fontSize: 16 }]}>
+                                Multi-Scenario Market Comparison
+                            </Text>
+                        </View>
+                        <TouchableOpacity
+                            onPress={() => setShowScenarios((prev) => !prev)}
+                            style={[styles.chip, activeTheme.toggle, { paddingHorizontal: 10, paddingVertical: 4 }]}
+                        >
+                            <Text style={{ fontSize: 12, fontWeight: "600", color: activeTheme.title.color }}>
+                                {showScenarios ? "Hide ▲" : "Show ▼"}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    {showScenarios && (
+                        <View>
+                            <Text style={[styles.subtext, activeTheme.subtext, { fontSize: 12, marginBottom: 14 }]}>
+                                Compare returns under Bearish market slowdown, Base expected rate, and Bullish expansion.
+                            </Text>
+
+                            {/* Scenario Rate Chips / Customizers */}
+                            <View style={{ flexDirection: "row", gap: 8, marginBottom: 16 }}>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={[styles.label, activeTheme.label, { fontSize: 11 }]}>🐻 Bear Rate %</Text>
+                                    <TextInput
+                                        style={[styles.input, activeTheme.input, { borderColor: activeTheme.borderColor, paddingVertical: 4, height: 36, fontSize: 13 }]}
+                                        keyboardType="numeric"
+                                        value={bearRate}
+                                        onChangeText={setBearRate}
+                                    />
+                                </View>
+
+                                <View style={{ flex: 1 }}>
+                                    <Text style={[styles.label, activeTheme.label, { fontSize: 11 }]}>🎯 Base Rate %</Text>
+                                    <View style={[styles.input, activeTheme.input, { borderColor: activeTheme.borderColor, paddingVertical: 4, height: 36, justifyContent: "center", backgroundColor: activeTheme.toggle.backgroundColor }]}>
+                                        <Text style={{ fontSize: 13, fontWeight: "700", color: activeTheme.title.color }}>{annualRate}%</Text>
+                                    </View>
+                                </View>
+
+                                <View style={{ flex: 1 }}>
+                                    <Text style={[styles.label, activeTheme.label, { fontSize: 11 }]}>🚀 Bull Rate %</Text>
+                                    <TextInput
+                                        style={[styles.input, activeTheme.input, { borderColor: activeTheme.borderColor, paddingVertical: 4, height: 36, fontSize: 13 }]}
+                                        keyboardType="numeric"
+                                        value={bullRate}
+                                        onChangeText={setBullRate}
+                                    />
+                                </View>
+                            </View>
+
+                            {/* 3 Scenario Cards */}
+                            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "space-between" }}>
+                                {/* Bear Case */}
+                                <View style={[{ width: "31%", minWidth: 140, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: "#F59E0B" }, activeTheme.card]}>
+                                    <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 6 }}>
+                                        <Text style={{ fontSize: 14 }}>🐻</Text>
+                                        <Text style={{ fontSize: 13, fontWeight: "800", color: "#F59E0B" }}>Bear ({bearRate}%)</Text>
+                                    </View>
+                                    <Text style={{ fontSize: 10, color: activeTheme.subtext.color }}>Invested</Text>
+                                    <Text style={{ fontSize: 12, fontWeight: "600", color: activeTheme.title.color, marginBottom: 4 }}>
+                                        {formatCompactCurrency(multiScenarios.bear.totalInvested)}
+                                    </Text>
+                                    <Text style={{ fontSize: 10, color: activeTheme.subtext.color }}>Estimated Returns</Text>
+                                    <Text style={{ fontSize: 12, fontWeight: "600", color: "#10B981", marginBottom: 4 }}>
+                                        +{formatCompactCurrency(multiScenarios.bear.estimatedReturns)}
+                                    </Text>
+                                    <View style={{ height: 1, backgroundColor: activeTheme.borderColor, marginVertical: 4 }} />
+                                    <Text style={{ fontSize: 10, color: activeTheme.subtext.color }}>Final Corpus</Text>
+                                    <Text style={{ fontSize: 14, fontWeight: "800", color: "#F59E0B" }}>
+                                        {formatCompactCurrency(deductLtcgTax ? multiScenarios.bear.netMaturityValue : multiScenarios.bear.maturityValue)}
+                                    </Text>
+                                </View>
+
+                                {/* Base Case */}
+                                <View style={[{ width: "31%", minWidth: 140, padding: 12, borderRadius: 12, borderWidth: 2, borderColor: "#3B82F6" }, activeTheme.card]}>
+                                    <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 6 }}>
+                                        <Text style={{ fontSize: 14 }}>🎯</Text>
+                                        <Text style={{ fontSize: 13, fontWeight: "800", color: "#3B82F6" }}>Base ({annualRate}%)</Text>
+                                    </View>
+                                    <Text style={{ fontSize: 10, color: activeTheme.subtext.color }}>Invested</Text>
+                                    <Text style={{ fontSize: 12, fontWeight: "600", color: activeTheme.title.color, marginBottom: 4 }}>
+                                        {formatCompactCurrency(multiScenarios.base.totalInvested)}
+                                    </Text>
+                                    <Text style={{ fontSize: 10, color: activeTheme.subtext.color }}>Estimated Returns</Text>
+                                    <Text style={{ fontSize: 12, fontWeight: "600", color: "#10B981", marginBottom: 4 }}>
+                                        +{formatCompactCurrency(multiScenarios.base.estimatedReturns)}
+                                    </Text>
+                                    <View style={{ height: 1, backgroundColor: activeTheme.borderColor, marginVertical: 4 }} />
+                                    <Text style={{ fontSize: 10, color: activeTheme.subtext.color }}>Final Corpus</Text>
+                                    <Text style={{ fontSize: 14, fontWeight: "800", color: "#3B82F6" }}>
+                                        {formatCompactCurrency(deductLtcgTax ? multiScenarios.base.netMaturityValue : multiScenarios.base.maturityValue)}
+                                    </Text>
+                                </View>
+
+                                {/* Bull Case */}
+                                <View style={[{ width: "31%", minWidth: 140, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: "#10B981" }, activeTheme.card]}>
+                                    <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 6 }}>
+                                        <Text style={{ fontSize: 14 }}>🚀</Text>
+                                        <Text style={{ fontSize: 13, fontWeight: "800", color: "#10B981" }}>Bull ({bullRate}%)</Text>
+                                    </View>
+                                    <Text style={{ fontSize: 10, color: activeTheme.subtext.color }}>Invested</Text>
+                                    <Text style={{ fontSize: 12, fontWeight: "600", color: activeTheme.title.color, marginBottom: 4 }}>
+                                        {formatCompactCurrency(multiScenarios.bull.totalInvested)}
+                                    </Text>
+                                    <Text style={{ fontSize: 10, color: activeTheme.subtext.color }}>Estimated Returns</Text>
+                                    <Text style={{ fontSize: 12, fontWeight: "600", color: "#10B981", marginBottom: 4 }}>
+                                        +{formatCompactCurrency(multiScenarios.bull.estimatedReturns)}
+                                    </Text>
+                                    <View style={{ height: 1, backgroundColor: activeTheme.borderColor, marginVertical: 4 }} />
+                                    <Text style={{ fontSize: 10, color: activeTheme.subtext.color }}>Final Corpus</Text>
+                                    <Text style={{ fontSize: 14, fontWeight: "800", color: "#10B981" }}>
+                                        {formatCompactCurrency(deductLtcgTax ? multiScenarios.bull.netMaturityValue : multiScenarios.bull.maturityValue)}
+                                    </Text>
+                                </View>
+                            </View>
+                        </View>
+                    )}
+                </View>
+
                 {/* ── Yearly Milestones Table ── */}
                 {milestones.length > 0 && (
-                    <View style={[styles.tableCard, activeTheme.card, { borderColor: activeTheme.borderColor }]}>
+                    <View style={[styles.tableCard, activeTheme.card, { borderColor: activeTheme.borderColor, marginTop: 16 }]}>
                         <Text style={[styles.tableTitle, activeTheme.title]}>
                             📈 Growth Progression {isSipHold && `(${sipYears}Y SIP + ${result.holdingYears}Y Compounding)`}
                         </Text>
@@ -782,7 +1113,7 @@ export default function SipCalculatorScreen({ theme = "dark", setTheme }) {
                                         : activeTheme.title,
                                 ]}
                             >
-                                {adjustInflation ? "Real Value" : "Total"}
+                                {adjustInflation ? "Real Value" : (deductLtcgTax ? "Post-Tax" : "Total")}
                             </Text>
                         </View>
 
@@ -827,7 +1158,7 @@ export default function SipCalculatorScreen({ theme = "dark", setTheme }) {
                                     </Text>
                                 ) : (
                                     <Text style={[styles.tableCell, activeTheme.subtext]}>
-                                        {formatCurrency(m.total)}
+                                        {formatCurrency(deductLtcgTax ? m.netTotal : m.total)}
                                     </Text>
                                 )}
                                 <Text
@@ -839,7 +1170,7 @@ export default function SipCalculatorScreen({ theme = "dark", setTheme }) {
                                             : activeTheme.title,
                                     ]}
                                 >
-                                    {formatCurrency(adjustInflation ? m.realTotal : m.total)}
+                                    {formatCurrency(adjustInflation ? m.realTotal : (deductLtcgTax ? m.netTotal : m.total))}
                                 </Text>
                             </View>
                         ))}

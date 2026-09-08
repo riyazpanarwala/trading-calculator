@@ -1,5 +1,7 @@
 /**
  * Systematic Withdrawal Plan (SWP) financial calculation utilities
+ * Enhanced with Redemption Tax deductions (LTCG/STCG), Inflation-adjusted real purchasing power,
+ * and Sequence of Returns Risk (SORR) market crash simulation.
  */
 
 /**
@@ -35,15 +37,26 @@ export function formatCompactCurrency(value) {
 }
 
 /**
- * Calculate SWP simulation across total months
- *
- * @param {Object} params
- * @param {number} params.initialInvestment - Total initial corpus (₹)
- * @param {number} params.monthlyWithdrawal - Monthly withdrawal amount (₹)
- * @param {number} params.annualRate - Expected annual return rate (%)
- * @param {number} params.years - Investment horizon (years)
- * @param {number} [params.stepUpPercent=0] - Annual increase in monthly withdrawal (%)
- * @returns {Object}
+ * Get annual return rate for a specific year based on SORR scenario
+ */
+export function getYearlyRate(yr, baseRate = 10, scenario = "steady") {
+    const r = parseFloat(baseRate) || 10;
+    if (scenario === "early_crash") {
+        if (yr === 1) return -15;
+        if (yr === 2) return -10;
+        if (yr === 3) return 5;
+        return r + 4; // Recovery years
+    }
+    if (scenario === "early_bull") {
+        if (yr === 1) return 22;
+        if (yr === 2) return 18;
+        return Math.max(0, r - 2);
+    }
+    return r;
+}
+
+/**
+ * Calculate SWP simulation across total months with Tax, Inflation & SORR options
  */
 export function calculateSwpResult({
     initialInvestment,
@@ -51,6 +64,11 @@ export function calculateSwpResult({
     annualRate,
     years,
     stepUpPercent = 0,
+    deductSwpTax = false,
+    swpTaxRate = 12.5,
+    swpTaxExemption = 125000,
+    swpTaxType = "equity_ltcg", // "equity_ltcg" | "debt_slab"
+    sorrScenario = "steady", // "steady" | "early_crash" | "early_bull"
 }) {
     const C0 = parseFloat(initialInvestment);
     const W0 = parseFloat(monthlyWithdrawal);
@@ -58,11 +76,16 @@ export function calculateSwpResult({
     const y = Math.min(Math.max(1, Math.round(parseFloat(years) || 0)), 50);
     const stepUp = Math.max(0, parseFloat(stepUpPercent) || 0);
 
+    const taxRate = Math.max(0, parseFloat(swpTaxRate) || 0);
+    const ltcgExemption = Math.max(0, parseFloat(swpTaxExemption) || 0);
+
     if (isNaN(C0) || C0 <= 0 || isNaN(W0) || W0 <= 0 || isNaN(r) || r < 0 || y <= 0) {
         return {
             isValid: false,
             totalInvested: 0,
             totalWithdrawn: 0,
+            totalNetWithdrawn: 0,
+            totalTaxPaid: 0,
             finalBalance: 0,
             totalGains: 0,
             isDepleted: false,
@@ -76,19 +99,26 @@ export function calculateSwpResult({
     }
 
     const totalMonths = y * 12;
-    const i = r === 0 ? 0 : r / (12 * 100);
 
     let currentBalance = C0;
-    let totalWithdrawn = 0;
+    let costBasis = C0;
+    let totalGrossWithdrawn = 0;
+    let totalNetWithdrawn = 0;
+    let totalTaxPaid = 0;
     let totalInterestEarned = 0;
     let depletedAtMonths = null;
     let monthlyW = W0;
+    let yearlyGainsInCurYr = 0;
 
     for (let m = 1; m <= totalMonths; m++) {
-        // Step-up monthly withdrawal at the start of each new year
         const currentYear = Math.floor((m - 1) / 12) + 1;
-        if (stepUp > 0 && m > 1 && (m - 1) % 12 === 0) {
-            monthlyW = W0 * Math.pow(1 + stepUp / 100, currentYear - 1);
+
+        if (m > 1 && (m - 1) % 12 === 0) {
+            // Reset yearly gain tracking for tax exemption
+            yearlyGainsInCurYr = 0;
+            if (stepUp > 0) {
+                monthlyW = W0 * Math.pow(1 + stepUp / 100, currentYear - 1);
+            }
         }
 
         if (currentBalance <= 0) {
@@ -98,30 +128,51 @@ export function calculateSwpResult({
             continue;
         }
 
-        let actualWithdrawal = monthlyW;
-        if (currentBalance < monthlyW) {
-            actualWithdrawal = currentBalance;
-            currentBalance = 0;
-            totalWithdrawn += actualWithdrawal;
-            if (depletedAtMonths == null) {
-                depletedAtMonths = m;
-            }
-        } else {
-            currentBalance -= actualWithdrawal;
-            totalWithdrawn += actualWithdrawal;
+        const grossW = Math.min(currentBalance, monthlyW);
 
-            // Remaining balance earns interest for the month
-            if (r > 0) {
-                const interestEarned = currentBalance * i;
-                totalInterestEarned += interestEarned;
-                currentBalance += interestEarned;
+        // Tax calculation on redemption gains
+        const gainInBalance = Math.max(0, currentBalance - costBasis);
+        const gainRatio = currentBalance > 0 ? gainInBalance / currentBalance : 0;
+        const taxableGainPortion = grossW * gainRatio;
+        const principalPortion = grossW - taxableGainPortion;
+        costBasis = Math.max(0, costBasis - principalPortion);
+
+        let monthTax = 0;
+        if (deductSwpTax && taxableGainPortion > 0) {
+            if (swpTaxType === "equity_ltcg") {
+                const availableExemption = Math.max(0, ltcgExemption - yearlyGainsInCurYr);
+                const taxableAfterExemption = Math.max(0, taxableGainPortion - availableExemption);
+                yearlyGainsInCurYr += taxableGainPortion;
+                monthTax = taxableAfterExemption * (taxRate / 100);
+            } else {
+                monthTax = taxableGainPortion * (taxRate / 100);
             }
+        }
+
+        const netInHand = Math.max(0, grossW - monthTax);
+        totalGrossWithdrawn += grossW;
+        totalNetWithdrawn += netInHand;
+        totalTaxPaid += monthTax;
+        currentBalance -= grossW;
+
+        if (currentBalance <= 0 && depletedAtMonths == null) {
+            depletedAtMonths = m;
+        }
+
+        // Interest compounding for remaining balance
+        const yrRate = getYearlyRate(currentYear, r, sorrScenario);
+        const monthlyRate = yrRate / (12 * 100);
+
+        if (currentBalance > 0 && yrRate !== 0) {
+            const interestEarned = currentBalance * monthlyRate;
+            totalInterestEarned += interestEarned;
+            currentBalance += interestEarned;
         }
     }
 
     const isDepleted = depletedAtMonths != null;
     const finalBalance = Math.max(0, currentBalance);
-    const totalGains = Math.max(0, totalWithdrawn + finalBalance - C0);
+    const totalGains = Math.max(0, totalGrossWithdrawn + finalBalance - C0);
     const isEvergreen = !isDepleted && finalBalance >= C0;
     const initialAnnualWithdrawalRate = C0 > 0 ? ((W0 * 12) / C0) * 100 : 0;
 
@@ -135,7 +186,9 @@ export function calculateSwpResult({
     return {
         isValid: true,
         totalInvested: Math.round(C0),
-        totalWithdrawn: Math.round(totalWithdrawn),
+        totalWithdrawn: Math.round(totalGrossWithdrawn),
+        totalNetWithdrawn: Math.round(totalNetWithdrawn),
+        totalTaxPaid: Math.round(totalTaxPaid),
         finalBalance: Math.round(finalBalance),
         totalGains: Math.round(totalGains),
         isDepleted,
@@ -150,14 +203,6 @@ export function calculateSwpResult({
 
 /**
  * Generate year-by-year financial ledger for SWP
- *
- * @param {Object} params
- * @param {number} params.initialInvestment
- * @param {number} params.monthlyWithdrawal
- * @param {number} params.annualRate
- * @param {number} params.years
- * @param {number} [params.stepUpPercent=0]
- * @returns {Array<Object>}
  */
 export function calculateSwpYearlyBreakdown({
     initialInvestment,
@@ -165,6 +210,11 @@ export function calculateSwpYearlyBreakdown({
     annualRate,
     years,
     stepUpPercent = 0,
+    deductSwpTax = false,
+    swpTaxRate = 12.5,
+    swpTaxExemption = 125000,
+    swpTaxType = "equity_ltcg",
+    sorrScenario = "steady",
 }) {
     const C0 = parseFloat(initialInvestment);
     const W0 = parseFloat(monthlyWithdrawal);
@@ -172,15 +222,19 @@ export function calculateSwpYearlyBreakdown({
     const totalYears = Math.min(Math.max(1, Math.round(parseFloat(years) || 0)), 50);
     const stepUp = Math.max(0, parseFloat(stepUpPercent) || 0);
 
+    const taxRate = Math.max(0, parseFloat(swpTaxRate) || 0);
+    const ltcgExemption = Math.max(0, parseFloat(swpTaxExemption) || 0);
+
     if (isNaN(C0) || C0 <= 0 || isNaN(W0) || W0 <= 0 || isNaN(r) || r < 0 || totalYears <= 0) {
         return [];
     }
 
     const milestones = [];
-    const i = r === 0 ? 0 : r / (12 * 100);
-
     let currentBalance = C0;
+    let costBasis = C0;
     let cumulativeWithdrawn = 0;
+    let cumulativeNetWithdrawn = 0;
+    let cumulativeTaxPaid = 0;
     let monthlyW = W0;
 
     for (let yr = 1; yr <= totalYears; yr++) {
@@ -189,38 +243,67 @@ export function calculateSwpYearlyBreakdown({
         }
 
         const openingBalance = currentBalance;
-        let yearWithdrawn = 0;
+        let yearGrossWithdrawn = 0;
+        let yearNetWithdrawn = 0;
+        let yearTaxPaid = 0;
         let yearInterest = 0;
+        let yearlyGainsInCurYr = 0;
+
+        const yrRate = getYearlyRate(yr, r, sorrScenario);
+        const monthlyRate = yrRate / (12 * 100);
 
         for (let m = 1; m <= 12; m++) {
             if (currentBalance <= 0) break;
 
-            if (currentBalance < monthlyW) {
-                yearWithdrawn += currentBalance;
-                currentBalance = 0;
-                break;
-            } else {
-                currentBalance -= monthlyW;
-                yearWithdrawn += monthlyW;
+            const grossW = Math.min(currentBalance, monthlyW);
+            const gainInBalance = Math.max(0, currentBalance - costBasis);
+            const gainRatio = currentBalance > 0 ? gainInBalance / currentBalance : 0;
+            const taxableGainPortion = grossW * gainRatio;
+            const principalPortion = grossW - taxableGainPortion;
+            costBasis = Math.max(0, costBasis - principalPortion);
 
-                if (r > 0) {
-                    const interest = currentBalance * i;
-                    yearInterest += interest;
-                    currentBalance += interest;
+            let monthTax = 0;
+            if (deductSwpTax && taxableGainPortion > 0) {
+                if (swpTaxType === "equity_ltcg") {
+                    const availableExemption = Math.max(0, ltcgExemption - yearlyGainsInCurYr);
+                    const taxableAfterExemption = Math.max(0, taxableGainPortion - availableExemption);
+                    yearlyGainsInCurYr += taxableGainPortion;
+                    monthTax = taxableAfterExemption * (taxRate / 100);
+                } else {
+                    monthTax = taxableGainPortion * (taxRate / 100);
                 }
+            }
+
+            const netInHand = Math.max(0, grossW - monthTax);
+            yearGrossWithdrawn += grossW;
+            yearNetWithdrawn += netInHand;
+            yearTaxPaid += monthTax;
+            currentBalance -= grossW;
+
+            if (currentBalance > 0 && yrRate !== 0) {
+                const interest = currentBalance * monthlyRate;
+                yearInterest += interest;
+                currentBalance += interest;
             }
         }
 
-        cumulativeWithdrawn += yearWithdrawn;
+        cumulativeWithdrawn += yearGrossWithdrawn;
+        cumulativeNetWithdrawn += yearNetWithdrawn;
+        cumulativeTaxPaid += yearTaxPaid;
 
         milestones.push({
             year: yr,
             monthlyWithdrawal: Math.round(monthlyW),
             openingBalance: Math.round(openingBalance),
-            withdrawn: Math.round(yearWithdrawn),
+            withdrawn: Math.round(yearGrossWithdrawn),
+            netWithdrawn: Math.round(yearNetWithdrawn),
+            taxPaid: Math.round(yearTaxPaid),
             returns: Math.round(yearInterest),
             closingBalance: Math.round(currentBalance),
             cumulativeWithdrawn: Math.round(cumulativeWithdrawn),
+            cumulativeNetWithdrawn: Math.round(cumulativeNetWithdrawn),
+            cumulativeTaxPaid: Math.round(cumulativeTaxPaid),
+            yearReturnRate: yrRate,
             isDepleted: currentBalance <= 0,
         });
 
@@ -230,4 +313,42 @@ export function calculateSwpYearlyBreakdown({
     }
 
     return milestones;
+}
+
+/**
+ * Compare Steady, Early Crash (SORR Risk), and Early Bull SWP scenarios
+ */
+export function calculateSorrComparison(params) {
+    const steady = calculateSwpResult({ ...params, sorrScenario: "steady" });
+    const earlyCrash = calculateSwpResult({ ...params, sorrScenario: "early_crash" });
+    const earlyBull = calculateSwpResult({ ...params, sorrScenario: "early_bull" });
+
+    return { steady, earlyCrash, earlyBull };
+}
+
+/**
+ * Calculate inflation-adjusted real purchasing power of remaining balance
+ */
+export function calculateInflationAdjustedValue(nominalValue, annualInflationRate, years) {
+    const V = parseFloat(nominalValue);
+    const inf = parseFloat(annualInflationRate);
+    const y = parseFloat(years);
+
+    if (isNaN(V) || V <= 0 || isNaN(y) || y <= 0) return Math.round(V || 0);
+    if (isNaN(inf) || inf <= 0) return Math.round(V);
+
+    const realValue = V / Math.pow(1 + inf / 100, y);
+    return Math.round(realValue);
+}
+
+/**
+ * Calculate required monthly withdrawal in future years to match today's purchasing power
+ */
+export function calculateRequiredFutureWithdrawal(initialMonthlyWithdrawal, annualInflationRate, years) {
+    const W0 = parseFloat(initialMonthlyWithdrawal);
+    const inf = parseFloat(annualInflationRate);
+    const y = parseFloat(years);
+
+    if (isNaN(W0) || W0 <= 0 || isNaN(y) || y <= 0 || isNaN(inf) || inf <= 0) return Math.round(W0 || 0);
+    return Math.round(W0 * Math.pow(1 + inf / 100, y));
 }
